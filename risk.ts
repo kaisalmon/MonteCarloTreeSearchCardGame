@@ -27,7 +27,38 @@ const DIRS = [
     {x: 0, y:-1},
 ]
 
+enum RiskTile {
+    PASSABLE, IMPASSABLE, BONUS
+}
+
 export class RiskGame implements Game<RiskState, RiskMove>{
+    width: number;
+    height: number;
+
+    tiles:RiskTile[][]
+
+    constructor(map:string) {
+        const rows = map.split(/\s*\n\s*/);
+        this.width = rows[0].length;
+        this.height = rows.length;
+        this.tiles = []
+        try{
+            rows.forEach(row=>this.tiles.push(row.split(/\s*/).map(RiskGame.charToTile)))
+        }catch(e){
+            console.log({rows})
+            throw e;
+        }
+    }
+
+
+    static charToTile(char:string):RiskTile{
+        if(char==='.') return RiskTile.PASSABLE;
+        if(char==='*') return RiskTile.BONUS;
+        if(char==='#') return RiskTile.IMPASSABLE;
+        throw new Error('Unknown tile with string '+char)
+    }
+
+
     applyMove(state: RiskState, move: RiskMove): RiskState {
         if(move.type === 'end') return this.applyEndTurnMove(move, state);
         if(move.type === 'reinforce') return this.applyReinforceMove(move, state);
@@ -49,10 +80,10 @@ export class RiskGame implements Game<RiskState, RiskMove>{
         return GameStatus.DRAW;
     }
 
-    getCoords(state:RiskState){
+    getCoords(){
         const coords = []
-          for(let y = 0; y < state.ownership[0].length; y++) {
-              for (let x = 0; x < state.ownership.length; x++) {
+          for(let y = 0; y <this.height; y++) {
+              for (let x = 0; x < this.width; x++) {
                     coords.push({x,y})
               }
           }
@@ -67,7 +98,7 @@ export class RiskGame implements Game<RiskState, RiskMove>{
 
     getValidReinforcementMoves(state: RiskState):RiskReinforceMove[] {
         if(state.troopsInHand === 0) return [];
-        return this.getCoords(state)
+        return this.getCoords()
             .filter(({x,y})=>state.ownership[x][y]===state.activePlayer)
             .map(to=>({
                 type: "reinforce",
@@ -78,7 +109,8 @@ export class RiskGame implements Game<RiskState, RiskMove>{
 
     getValidAttackMoves(state: RiskState):RiskAttackMove[] {
         if(state.troopsInHand === 0) return [];
-        const attackTargets =  this.getCoords(state)
+        const attackTargets =  this.getCoords()
+            .filter(({x,y})=>this.tiles[x][y]!==RiskTile.IMPASSABLE) // Isn't impassable
             .filter(({x,y})=>state.ownership[x][y]!==state.activePlayer) //Doesn't belong to player
             .filter(({x,y})=>DIRS.some(delta=>
                 (x+delta.x) >= 0
@@ -95,21 +127,17 @@ export class RiskGame implements Game<RiskState, RiskMove>{
     }
 
     newGame(): RiskState {
+        const ownership:(1|2|0)[][] = Array.from(Array(this.width), () => new Array(this.height).fill(0));
+        const reinforcements:number[][] =  Array.from(Array(this.width), () => new Array(this.height).fill(0));
+        const startingTroops = 3;
+        ownership[0][0] = 1;
+        ownership[this.width-1][this.height-1] = 2;
+        reinforcements[this.width-1][this.height-1] = startingTroops;
         return {
             activePlayer: 1,
-            troopsInHand: 3,
-            ownership: [
-                [1,0,0,0],
-                [0,0,0,0],
-                [0,0,0,0],
-                [0,0,0,2],
-            ],
-            reinforcements:[
-                [0,0,0,0],
-                [0,0,0,0],
-                [0,0,0,0],
-                [0,0,0,3]
-            ]
+            troopsInHand: startingTroops,
+            ownership,
+            reinforcements
         }
     }
 
@@ -120,7 +148,7 @@ export class RiskGame implements Game<RiskState, RiskMove>{
             2: chalk.red
         };
          const playerInvertedColors = {
-            0:  chalk.bgWhite,
+            0:  chalk.yellow,
             1: chalk.bold.blue,
             2: chalk.bold.red
         };
@@ -130,7 +158,7 @@ export class RiskGame implements Game<RiskState, RiskMove>{
             for(let x = 0; x < state.ownership.length; x++){
                 const owner = state.ownership[x][y];
                 const color = this.tileGivesBonusTroops({x,y}) ? playerInvertedColors[owner] : playerColors[owner];
-                str += color(`${state.ownership[x][y] !== 0 ? state.reinforcements[x][y] + 1 : '.'} `)
+                str += color(`${state.ownership[x][y] !== 0 ? state.reinforcements[x][y] + 1 : this.getEmptyChar({x,y})} `)
             }
             str += '\n'
         }
@@ -143,24 +171,29 @@ export class RiskGame implements Game<RiskState, RiskMove>{
 
     private applyEndTurnMove(_: RiskEndMove, state:RiskState):RiskState {
         const nextPlayer = state.activePlayer === 1 ? 2 : 1;
-        const troopsInHandFromMap = this.getCoords(state)
+        const troopsInHandFromMap = this.getCoords()
             .filter(({x,y})=>state.ownership[x][y]===nextPlayer)
             .map(({x,y})=>state.reinforcements[x][y])
             .reduce((total, val)=>total+val)
         const reinforcements = state.reinforcements.map(row=>[...row]);
-        this.getCoords(state)
+        this.getCoords()
             .filter(({x,y})=>state.ownership[x][y]===nextPlayer)
             .forEach(({x,y})=>{
                 reinforcements[x][y] = 0;
             })
-        const bonusTroops = this.getCoords(state)
+        const bonusTroops = this.getCoords()
             .filter(({x,y})=>state.ownership[x][y]===nextPlayer)
             .filter(({x,y})=>this.tileGivesBonusTroops({x,y}))
             .length;
 
+        let TILES_PER_TROOP = 3;
+        const troopsFromLand  = Math.floor(this.getCoords()
+            .filter(({x,y})=>state.ownership[x][y]===nextPlayer)
+            .length / TILES_PER_TROOP);
+
         return {
             activePlayer: nextPlayer,
-            troopsInHand: troopsInHandFromMap + bonusTroops,
+            troopsInHand: troopsInHandFromMap + bonusTroops + troopsFromLand,
             reinforcements,
             ownership: state.ownership.map(row=>[...row]),
         };
@@ -178,7 +211,7 @@ export class RiskGame implements Game<RiskState, RiskMove>{
     }
 
     private tileGivesBonusTroops({x,y}:Coord):boolean {
-        return (x==0 && y==0)||(x==3&&y==3)
+        return this.tiles[x][y] === RiskTile.BONUS;
     }
 
     private applyAttackMove({to:{x,y}, n}: RiskAttackMove, state: RiskState):RiskState {
@@ -191,10 +224,10 @@ export class RiskGame implements Game<RiskState, RiskMove>{
             let defendingScore = 0;
             let attackingScore = 0;
             for(let i = 0; i < defendingDice; i++){
-                defendingScore += Math.floor(Math.random()*6)
+                defendingScore += Math.ceil(Math.random()*6)
             }
             for(let i = 0; i < attackingDice; i++){
-                attackingScore += Math.floor(Math.random()*6)
+                attackingScore += Math.ceil(Math.random()*6)
             }
             eventLog.push(`${attackingDice}d6 = ${attackingScore} vs ${defendingDice}d6 = ${defendingScore}`)
             if(attackingScore <= defendingScore){
@@ -227,5 +260,15 @@ export class RiskGame implements Game<RiskState, RiskMove>{
                 eventLog
             }
         }
+    }
+
+    private getEmptyChar({ x, y }:Coord) {
+        const tile = this.tiles[x][y];
+        const chars = {
+           [RiskTile.PASSABLE]: '.',
+            [RiskTile.IMPASSABLE]: '#',
+            [RiskTile.BONUS]: '*'
+        }
+        return chars[tile]
     }
 }
