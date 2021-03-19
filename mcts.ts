@@ -2,6 +2,7 @@ import _ from 'lodash';
 import promptSync from 'prompt-sync'
 import {RiskGame} from "./risk";
 import {ConnectFourGame} from "./ConnectFour";
+import chalk from "chalk";
 const prompt = promptSync();
 
 export enum GameStatus{
@@ -80,17 +81,20 @@ export class GreedyStrategy<STATE extends GameState, T> extends RandomStrategy<S
 export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, T>{
     mood = "waiting..."
     simulationStrategy: Strategy<STATE, T>;
+    samples:number;
+    depth:number;
 
-    constructor(simulationStrategy:Strategy<STATE, T> = new RandomStrategy()) {
+    constructor(samples=60, depth=100,simulationStrategy:Strategy<STATE, T> = new RandomStrategy()) {
         this.simulationStrategy = simulationStrategy;
+        this.depth = depth;
+        this.samples = samples;
     }
 
     pickMove(game:Game<STATE, T>, state: STATE): T {
-        const N = 60;
         const evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, length: 0}));
         if(evaluations.length === 0) throw new Error('No valid moves')
         const playerGoal = getPlayerGoal(state.activePlayer);
-        for(let i = 0; i < N; i++){
+        for(let i = 0; i < this.samples; i++){
             evaluations.forEach(evaluation=>{
                 const newState = game.applyMove(state, evaluation.move);
                 const simulation = this.simulateGame(game, newState) ;
@@ -103,8 +107,8 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
                 evaluation.length += simulation.length;
             })
         }
-        const allEqual = _.every(evaluations, evaluation=>evaluation.score === evaluations[0].score);
-        if(allEqual && evaluations[0].score === evaluations[0].outOf) {
+        const allEqual = _.every(evaluations, evaluation=>evaluation.score > evaluations[0].score*0.99 && evaluation.score < evaluations[0].score * 1.01);
+        if(allEqual && evaluations[0].score > 0.99 * evaluations[0].outOf) {
             const result = _.minBy(evaluations, 'length')!
             this.mood = JSON.stringify({
                 score: 1,
@@ -112,7 +116,7 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
                 length: (result.length / result.outOf).toFixed(2)
             })
             return result.move;
-        }else if(allEqual && evaluations[0].score === -1 * evaluations[0].outOf){
+        }else if(allEqual && evaluations[0].score < -0.99 * evaluations[0].outOf){
             const result =  _.maxBy(evaluations, 'length')!
             this.mood = JSON.stringify({score: -1, maximizing:'Length until victory', length:(result.length/result.outOf).toFixed(2)})
             return result.move;
@@ -123,9 +127,8 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         }
     }
     simulateGame(game:Game<STATE, T>, state:STATE):{status:GameStatus, length:number}{
-        const MAX_LEN = 600;
         let curState = state;
-        for(let i = 0; i < MAX_LEN; i++){
+        for(let i = 0; i < this.depth; i++){
             const status = game.getStatus(curState);
             if(status !== GameStatus.IN_PLAY) return {status, length: i};
             try{
@@ -137,14 +140,14 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
                 throw e;
             }
         }
-        return {status: GameStatus.IN_PLAY, length: MAX_LEN};
+        return {status: GameStatus.IN_PLAY, length: this.depth};
     }
 }
 
 export function main(){
-    const game = new ConnectFourGame();
-    const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy()
-    const p2Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new RandomStrategy();
+    const game = new RiskGame();
+    const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(10,500)
+    const p2Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new MCTSStrategy(200,100);
 
     const wins:Record<GameStatus, number> = {
         [GameStatus.WIN]: 0,
@@ -153,7 +156,7 @@ export function main(){
         [GameStatus.IN_PLAY]: 0,
     };
     for(let i = 0; i < 100; i++) {
-        const max_len = 2000;
+        const max_len = 1000;
         let moves = 0;
         let state = game.newGame()
         try {
@@ -163,6 +166,7 @@ export function main(){
                 state = game.applyMove(state, move);
                 console.log({p1:p1Strat.mood, p2:p2Strat.mood})
                 game.print(state)
+                console.log(wins)
             }
             const status = game.getStatus(state);
             wins[status] += 1
@@ -171,7 +175,7 @@ export function main(){
             console.error(e)
             if(e.message.includes('No valid moves')){
             }else{
-                break
+                throw e
             }
         }
         //game.print(state)
