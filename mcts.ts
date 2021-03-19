@@ -7,8 +7,8 @@ const prompt = promptSync();
 
 export enum GameStatus{
     IN_PLAY='IN_PLAY',
-    LOSE='LOSE',
-    WIN='WIN',
+    LOSE='RED_WIN',
+    WIN='BLUE_WIN',
     DRAW='DRAW'
 }
 
@@ -107,21 +107,28 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
                 evaluation.length += simulation.length;
             })
         }
-        const allEqual = _.every(evaluations, evaluation=>evaluation.score > evaluations[0].score*0.99 && evaluation.score < evaluations[0].score * 1.01);
-        if(allEqual && evaluations[0].score > 0.99 * evaluations[0].outOf) {
-            const result = _.minBy(evaluations, 'length')!
+        const highestEval =  _.maxBy(evaluations, 'score')!;
+        const highestScore = highestEval.score / highestEval.outOf
+        const bestMoves = evaluations.filter(({score,outOf})=>(score/outOf) > highestScore - 0.01)
+
+        if(highestScore > 0.9) {
+            const result = _.minBy(bestMoves, 'length')!
             this.mood = JSON.stringify({
-                score: 1,
-                minimizing: 'Length until victory',
+                score: result.score.toFixed(2),
+                goal: 'Minimizing Length to Victory',
                 length: (result.length / result.outOf).toFixed(2)
             })
             return result.move;
-        }else if(allEqual && evaluations[0].score < -0.99 * evaluations[0].outOf){
-            const result =  _.maxBy(evaluations, 'length')!
-            this.mood = JSON.stringify({score: -1, maximizing:'Length until victory', length:(result.length/result.outOf).toFixed(2)})
+        }else if(highestScore < -0.9){
+            const result = _.maxBy(bestMoves, 'length')!
+            this.mood = JSON.stringify({
+                score: result.score.toFixed(2),
+                goal: 'Delaying time till loss',
+                length: (result.length / result.outOf).toFixed(2)
+            })
             return result.move;
         }else{
-            const result =  _.maxBy(evaluations, 'score')!
+            const result =  _.maxBy(bestMoves, 'score')!
             this.mood = JSON.stringify({score: (result.score/result.outOf).toFixed(3), length:(result.length/result.outOf).toFixed(2)})
             return  result.move;
         }
@@ -146,7 +153,7 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
 
 export function main(){
     const game = new RiskGame();
-    const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(10,500)
+    const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(100,150)
     const p2Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new MCTSStrategy(200,100);
 
     const wins:Record<GameStatus, number> = {
@@ -155,7 +162,7 @@ export function main(){
         [GameStatus.DRAW]: 0,
         [GameStatus.IN_PLAY]: 0,
     };
-    for(let i = 0; i < 100; i++) {
+    for(let i = 0; i < 1; i++) {
         const max_len = 1000;
         let moves = 0;
         let state = game.newGame()
@@ -164,9 +171,12 @@ export function main(){
                 const activeStrat = state.activePlayer === 1 ? p1Strat : p2Strat;
                 const move = activeStrat.pickMove(game, state);
                 state = game.applyMove(state, move);
+
                 console.log({p1:p1Strat.mood, p2:p2Strat.mood})
                 game.print(state)
                 console.log(wins)
+
+
             }
             const status = game.getStatus(state);
             wins[status] += 1
