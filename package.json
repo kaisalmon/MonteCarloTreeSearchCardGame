@@ -1,0 +1,6 @@
+{
+   "scripts": {
+      "start": "ts-node --project tsconfig.json mcts.ts"
+
+   }
+}

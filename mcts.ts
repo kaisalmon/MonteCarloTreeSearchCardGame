@@ -83,15 +83,17 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
     simulationStrategy: Strategy<STATE, T>;
     samples:number;
     depth:number;
+    inPlayHeuristic:(state:STATE)=>number;
 
-    constructor(samples=60, depth=100,simulationStrategy:Strategy<STATE, T> = new RandomStrategy()) {
+    constructor(samples=60, depth=100, inPlayHeuristic: (state:STATE)=>number = ()=>0, simulationStrategy:Strategy<STATE, T> = new RandomStrategy()) {
         this.simulationStrategy = simulationStrategy;
         this.depth = depth;
         this.samples = samples;
+        this.inPlayHeuristic = inPlayHeuristic;
     }
 
     pickMove(game:Game<STATE, T>, state: STATE): T {
-        const evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, length: 0}));
+        const evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, depth: 0,unfinished:0}));
         if(evaluations.length === 0) throw new Error('No valid moves')
         const playerGoal = getPlayerGoal(state.activePlayer);
         for(let i = 0; i < this.samples; i++){
@@ -103,8 +105,12 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
                     evaluation.score++;
                 }else if(simulation.status !== GameStatus.DRAW && simulation.status !== GameStatus.IN_PLAY){
                     evaluation.score--;
+                }else if(simulation.heuristic !== undefined){
+                    const desire = state.activePlayer === 1 ? 1 : -1;
+                    evaluation.score += simulation.heuristic * desire ;
+                    evaluation.unfinished++;
                 }
-                evaluation.length += simulation.length;
+                evaluation.depth += simulation.length;
             })
         }
         const highestEval =  _.maxBy(evaluations, 'score')!;
@@ -112,28 +118,34 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         const bestMoves = evaluations.filter(({score,outOf})=>(score/outOf) > highestScore - 0.01)
 
         if(highestScore > 0.9) {
-            const result = _.minBy(bestMoves, 'length')!
+            const result = _.minBy(bestMoves, 'depth')!
             this.mood = JSON.stringify({
                 score: (result.score/result.outOf).toFixed(2),
                 goal: 'Minimizing Length to Victory',
-                length: (result.length / result.outOf).toFixed(2)
+                depth: (result.depth / result.outOf).toFixed(2),
+                unfinished: (result.unfinished / result.outOf).toFixed(2)
             })
             return result.move;
         }else if(highestScore < -0.9){
-            const result = _.maxBy(bestMoves, 'length')!
+            const result = _.maxBy(bestMoves, 'depth')!
             this.mood = JSON.stringify({
                 score: (result.score/result.outOf).toFixed(2),
                 goal: 'Delaying time till loss',
-                length: (result.length / result.outOf).toFixed(2)
+                depth: (result.depth / result.outOf).toFixed(2),
+                unfinished: (result.unfinished / result.outOf).toFixed(2)
             })
             return result.move;
         }else{
             const result =  _.maxBy(bestMoves, 'score')!
-            this.mood = JSON.stringify({score: (result.score/result.outOf).toFixed(3), length:(result.length/result.outOf).toFixed(2)})
+            this.mood = JSON.stringify({
+                score: (result.score / result.outOf).toFixed(3),
+                depth: (result.depth / result.outOf).toFixed(2),
+                unfinished: (result.unfinished / result.outOf).toFixed(2)
+            })
             return  result.move;
         }
     }
-    simulateGame(game:Game<STATE, T>, state:STATE):{status:GameStatus, length:number}{
+    simulateGame(game:Game<STATE, T>, state:STATE):{status:GameStatus, length:number, heuristic?:number}{
         let curState = state;
         for(let i = 0; i < this.depth; i++){
             const status = game.getStatus(curState);
@@ -143,25 +155,34 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
                 if(!move) return {status: GameStatus.DRAW, length: i};
                 curState = game.applyMove(curState, move);
             }catch(e){
-                if(e.message.includes('No valid move')) return {status: GameStatus.IN_PLAY, length: i};
+                if(e.message.includes('No valid move')) return {status: GameStatus.DRAW, length: i};
                 throw e;
             }
         }
-        return {status: GameStatus.IN_PLAY, length: this.depth};
+        return {status: GameStatus.IN_PLAY, length: this.depth, heuristic: this.inPlayHeuristic(curState)};
     }
 }
 
 export function main(){
     const game = new RiskGame(
-        `*.....
-               ..##..
-               ..##..
-               ..#.#*
-               .....#
-               .....*`
+        `* . . . *
+               . . . . #
+               . . . . .
+               # . . . .
+               * . . . *`
     );
-    const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(50,250)
-    const p2Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new MCTSStrategy(50,250);
+    const heuristic = (state:StateFromGame<typeof game>)=>{
+        const bluePoints = game.getCoords()
+            .filter(({x,y})=>state.ownership[x][y]===1)
+            .length;
+        const redPoints = game.getCoords()
+            .filter(({x,y})=>state.ownership[x][y]===2)
+            .length;
+        if(redPoints===bluePoints) return 0;
+        return (bluePoints-redPoints)/(redPoints+bluePoints)
+    }
+    const p1Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new MCTSStrategy(10,50, heuristic)
+    const p2Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(50,10, heuristic);
 
     const wins:Record<GameStatus, number> = {
         [GameStatus.WIN]: 0,

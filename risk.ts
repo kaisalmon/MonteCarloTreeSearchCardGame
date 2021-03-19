@@ -28,7 +28,7 @@ const DIRS = [
 ]
 
 enum RiskTile {
-    PASSABLE, IMPASSABLE, BONUS
+    PASSABLE='p', IMPASSABLE='i', BONUS='b'
 }
 
 export class RiskGame implements Game<RiskState, RiskMove>{
@@ -39,8 +39,6 @@ export class RiskGame implements Game<RiskState, RiskMove>{
 
     constructor(map:string) {
         const rows = map.split(/\s*\n\s*/);
-        this.width = rows[0].length;
-        this.height = rows.length;
         this.tiles = []
         try{
             rows.forEach(row=>this.tiles.push(row.split(/\s*/).map(RiskGame.charToTile)))
@@ -48,6 +46,8 @@ export class RiskGame implements Game<RiskState, RiskMove>{
             console.log({rows})
             throw e;
         }
+        this.width = this.tiles[0].length;
+        this.height = this.tiles.length;
     }
 
 
@@ -82,7 +82,7 @@ export class RiskGame implements Game<RiskState, RiskMove>{
 
     getCoords(){
         const coords = []
-          for(let y = 0; y <this.height; y++) {
+          for(let y = 0; y < this.height; y++) {
               for (let x = 0; x < this.width; x++) {
                     coords.push({x,y})
               }
@@ -100,6 +100,12 @@ export class RiskGame implements Game<RiskState, RiskMove>{
         if(state.troopsInHand === 0) return [];
         return this.getCoords()
             .filter(({x,y})=>state.ownership[x][y]===state.activePlayer)
+            .filter(({x,y})=>DIRS.some(delta=>
+                (x+delta.x) >= 0
+                && (x+delta.x) < state.ownership.length
+                && state.ownership[x+delta.x][y+delta.y] !== state.activePlayer
+                && state.ownership[x+delta.x][y+delta.y] !== 0)
+            ) //Next to enemy
             .map(to=>({
                 type: "reinforce",
                 n:1,
@@ -219,9 +225,9 @@ export class RiskGame implements Game<RiskState, RiskMove>{
         const isDefended = state.ownership[x][y] !== 0;
         let isSuccessful = true;
         if(isDefended){
-            const defendingDice = state.reinforcements[x][y] ? 2 : 1;
+            const defendingDice = state.reinforcements[x][y] + 1;
             const attackingDice = n;
-            let defendingScore = 0;
+            let defendingScore = 3;
             let attackingScore = 0;
             for(let i = 0; i < defendingDice; i++){
                 defendingScore += Math.ceil(Math.random()*6)
@@ -229,7 +235,7 @@ export class RiskGame implements Game<RiskState, RiskMove>{
             for(let i = 0; i < attackingDice; i++){
                 attackingScore += Math.ceil(Math.random()*6)
             }
-            eventLog.push(`${attackingDice}d6 = ${attackingScore} vs ${defendingDice}d6 = ${defendingScore}`)
+            eventLog.push(`${attackingDice}d6 = ${attackingScore} vs (${defendingDice}d6 + 3) = ${defendingScore}`)
             if(attackingScore <= defendingScore){
                 isSuccessful = false;
                 eventLog.push('Defender Victory')
