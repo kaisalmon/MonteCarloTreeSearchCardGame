@@ -1,5 +1,7 @@
 import _ from 'lodash';
 import promptSync from 'prompt-sync'
+import {RiskGame} from "./risk";
+import {ConnectFourGame} from "./ConnectFour";
 const prompt = promptSync();
 
 export enum GameStatus{
@@ -25,16 +27,23 @@ export interface Game<STATE extends GameState, T>{
 }
 
 export interface Strategy<STATE extends GameState, T>{
-     pickMove(game:Game<STATE,T>, state:STATE):T;
+    mood: string;
+    pickMove(game:Game<STATE,T>, state:STATE):T;
 }
 
 export type StateFromGame<G> = G extends Game<infer U,any> ?  U : never;
 export type MoveFromGame<G> = G extends Game<any, infer U> ?  U : never;
 
 export class RandomStrategy<STATE extends GameState, T> implements Strategy<STATE, T>{
+    mood = "none";
     pickMove(game:Game<STATE, T>, state: STATE): T {
         const sensibleMove = _.sample(game.getSensibleMoves(state))
-        if (sensibleMove) return sensibleMove;
+        if (sensibleMove){
+            this.mood = "Sensible"
+            return sensibleMove;
+        }else{
+            this.mood = "Not Sensible"
+        }
         const validMove = _.sample(game.getValidMoves(state))
         if (validMove) {
             return validMove;
@@ -44,6 +53,7 @@ export class RandomStrategy<STATE extends GameState, T> implements Strategy<STAT
 }
 
 export class InputStrategy<STATE extends GameState, T> implements Strategy<STATE, T> {
+    mood="player"
     transform:(str:string)=>T;
     constructor(transform:(str:string)=>T) {
         this.transform = transform;
@@ -56,6 +66,7 @@ export class InputStrategy<STATE extends GameState, T> implements Strategy<STATE
 
 }
 export class GreedyStrategy<STATE extends GameState, T> extends RandomStrategy<STATE, T> {
+    mood = "greedy"
     pickMove(game: Game<STATE, T>, state: STATE): T {
         const playerGoal = getPlayerGoal(state.activePlayer);
         const winningMove = game.getValidMoves(state).find(move=>game.getStatus(game.applyMove(state,move)) === playerGoal)
@@ -67,6 +78,7 @@ export class GreedyStrategy<STATE extends GameState, T> extends RandomStrategy<S
 }
 
 export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, T>{
+    mood = "waiting..."
     simulationStrategy: Strategy<STATE, T>;
 
     constructor(simulationStrategy:Strategy<STATE, T> = new RandomStrategy()) {
@@ -74,139 +86,96 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
     }
 
     pickMove(game:Game<STATE, T>, state: STATE): T {
-        const N = 100;
-        const evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0}));
+        const N = 60;
+        const evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, length: 0}));
         if(evaluations.length === 0) throw new Error('No valid moves')
         const playerGoal = getPlayerGoal(state.activePlayer);
         for(let i = 0; i < N; i++){
             evaluations.forEach(evaluation=>{
                 const newState = game.applyMove(state, evaluation.move);
+                const simulation = this.simulateGame(game, newState) ;
                 evaluation.outOf++;
-                evaluation.score += this.simulateGame(game, newState) === playerGoal ? 1 : -1;
+                if(simulation.status === playerGoal){
+                    evaluation.score++;
+                }else if(simulation.status !== GameStatus.DRAW && simulation.status !== GameStatus.IN_PLAY){
+                    evaluation.score--;
+                }
+                evaluation.length += simulation.length;
             })
         }
-        return _.maxBy(evaluations, 'score')!.move;
+        const allEqual = _.every(evaluations, evaluation=>evaluation.score === evaluations[0].score);
+        if(allEqual && evaluations[0].score === evaluations[0].outOf) {
+            const result = _.minBy(evaluations, 'length')!
+            this.mood = JSON.stringify({
+                score: 1,
+                minimizing: 'Length until victory',
+                length: (result.length / result.outOf).toFixed(2)
+            })
+            return result.move;
+        }else if(allEqual && evaluations[0].score === -1 * evaluations[0].outOf){
+            const result =  _.maxBy(evaluations, 'length')!
+            this.mood = JSON.stringify({score: -1, maximizing:'Length until victory', length:(result.length/result.outOf).toFixed(2)})
+            return result.move;
+        }else{
+            const result =  _.maxBy(evaluations, 'score')!
+            this.mood = JSON.stringify({score: (result.score/result.outOf).toFixed(3), length:(result.length/result.outOf).toFixed(2)})
+            return  result.move;
+        }
     }
-    simulateGame(game:Game<STATE, T>, state:STATE):GameStatus{
-        const MAX_LEN = 100;
+    simulateGame(game:Game<STATE, T>, state:STATE):{status:GameStatus, length:number}{
+        const MAX_LEN = 600;
         let curState = state;
         for(let i = 0; i < MAX_LEN; i++){
             const status = game.getStatus(curState);
-            if(status !== GameStatus.IN_PLAY) return status;
+            if(status !== GameStatus.IN_PLAY) return {status, length: i};
             try{
                 const move = this.simulationStrategy.pickMove(game, curState);
-                if(!move) return GameStatus.DRAW;
+                if(!move) return {status: GameStatus.DRAW, length: i};
                 curState = game.applyMove(curState, move);
             }catch(e){
-                if(e.message.includes('No valid move')) return GameStatus.IN_PLAY;
+                if(e.message.includes('No valid move')) return {status: GameStatus.IN_PLAY, length: i};
                 throw e;
             }
         }
-        return GameStatus.IN_PLAY;
+        return {status: GameStatus.IN_PLAY, length: MAX_LEN};
     }
 }
 
-type ConnectFourMove = {col:number}
-type ConnectFourState = {activePlayer: 1|2, rows:(1|2|undefined)[][]}
-class ConnectFourGame implements Game<ConnectFourState, ConnectFourMove> {
-    applyMove(state: ConnectFourState, move: ConnectFourMove): ConnectFourState {
-        const newRows = _.cloneDeep(state.rows);
-        newRows[move.col].push(state.activePlayer)
-        return {
-            activePlayer: state.activePlayer === 1 ? 2 : 1,
-            rows: newRows
-        }
-    }
+export function main(){
+    const game = new ConnectFourGame();
+    const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy()
+    const p2Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new RandomStrategy();
 
-    getSensibleMoves(state: ConnectFourState): ConnectFourMove[] {
-        return this.getValidMoves(state)
-    }
-
-    getStatus(state: ConnectFourState): GameStatus {
-        const highestCol = _.maxBy(state.rows, row=>row.length)!.length
-        for(let x = 0; x < state.rows.length; x++){
-            for(let y = 0; y < highestCol-1; y++){
-                const statusFromThisCoord = this.getStatusFromCoords(state, x,y);
-                if(statusFromThisCoord) return  statusFromThisCoord;
+    const wins:Record<GameStatus, number> = {
+        [GameStatus.WIN]: 0,
+        [GameStatus.LOSE]: 0,
+        [GameStatus.DRAW]: 0,
+        [GameStatus.IN_PLAY]: 0,
+    };
+    for(let i = 0; i < 100; i++) {
+        const max_len = 2000;
+        let moves = 0;
+        let state = game.newGame()
+        try {
+            while (game.getStatus(state) === GameStatus.IN_PLAY && moves++ < max_len) {
+                const activeStrat = state.activePlayer === 1 ? p1Strat : p2Strat;
+                const move = activeStrat.pickMove(game, state);
+                state = game.applyMove(state, move);
+                console.log({p1:p1Strat.mood, p2:p2Strat.mood})
+                game.print(state)
+            }
+            const status = game.getStatus(state);
+            wins[status] += 1
+        } catch (e) {
+            wins[GameStatus.IN_PLAY] += 1
+            console.error(e)
+            if(e.message.includes('No valid moves')){
+            }else{
+                break
             }
         }
-        return GameStatus.IN_PLAY;
+        //game.print(state)
+        console.log(wins)
     }
-
-    getStatusFromCoords(state: ConnectFourState, x:number, y:number): GameStatus|undefined{
-        return this.getStatusFromCoordsHoz(state, x, y)
-            || this.getStatusFromCoordsVert(state, x, y)
-          || this.getStatusFromCoordsDiagDown(state, x, y)
-          || this.getStatusFromCoordsDiagUp(state, x, y)
-    }
-
-    getStatusFromCoordsHoz(state: ConnectFourState, x:number, y:number): GameStatus|undefined{
-        const player = state.rows[x][y]
-        if(player===undefined) return undefined;
-        if(x<state.rows.length - 4) {
-            if (state.rows[x + 1][y] !== player) return undefined;
-            if (state.rows[x + 2][y] !== player) return undefined;
-            if (state.rows[x + 3][y] !== player) return undefined;
-            return player === 1 ? GameStatus.WIN : GameStatus.LOSE;
-        }
-    }
-
-    getStatusFromCoordsVert(state: ConnectFourState, x:number, y:number): GameStatus|undefined{
-        const player = state.rows[x][y]
-        if(player===undefined) return undefined;
-        if(state.rows[x][y+1]!==player) return undefined;
-        if(state.rows[x][y+2]!==player) return undefined;
-        if(state.rows[x][y+3]!==player) return undefined;
-        return player === 1 ? GameStatus.WIN : GameStatus.LOSE;
-    }
-
-    getStatusFromCoordsDiagDown(state: ConnectFourState, x:number, y:number): GameStatus|undefined{
-        const player = state.rows[x][y]
-        if(player===undefined) return undefined;
-        if(x<state.rows.length - 4) {
-            if (state.rows[x + 1][y - 1] !== player) return undefined;
-            if (state.rows[x + 2][y - 2] !== player) return undefined;
-            if (state.rows[x + 3][y - 3] !== player) return undefined;
-            return player === 1 ? GameStatus.WIN : GameStatus.LOSE;
-        }
-    }
-
-    getStatusFromCoordsDiagUp(state: ConnectFourState, x:number, y:number): GameStatus|undefined{
-        const player = state.rows[x][y]
-        if(player===undefined) return undefined;
-        if(x<state.rows.length - 4) {
-            if (state.rows[x + 1][y + 1] !== player) return undefined;
-            if (state.rows[x + 2][y + 2] !== player) return undefined;
-            if (state.rows[x + 3][y + 3] !== player) return undefined;
-            return player === 1 ? GameStatus.WIN : GameStatus.LOSE;
-        }
-    }
-
-    getValidMoves(state: ConnectFourState): ConnectFourMove[] {
-        return state.rows
-            .map((row, index)=>({col:index}))
-            .filter(({col})=>(state.rows[col].length < 7));
-
-    }
-
-    newGame(): ConnectFourState {
-        return {
-            activePlayer: 1,
-            rows:[
-                [],
-                [],
-                [],
-                [],
-                [],
-                [],
-                []
-            ]
-        };
-    }
-
-    print(state:ConnectFourState){
-        console.log(state.rows.map((row, i)=>i+'|'+row.join(' ')).join('\n')+'\n--')
-    }
-
 }
-
+main();

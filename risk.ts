@@ -1,12 +1,6 @@
 import {
     Game,
     GameStatus,
-    InputStrategy,
-    MCTSStrategy,
-    MoveFromGame,
-    RandomStrategy,
-    StateFromGame,
-    Strategy
 } from "./mcts";
 import chalk from 'chalk';
 import _ from 'lodash'
@@ -17,6 +11,7 @@ interface RiskState {
    // step: 'attack'|'fortify'
     ownership: (1|2|0)[][],
     spareTroops: number[][],
+    eventLog?:string[],
 }
 type RiskMovementMove =  {type:"move", from:coord, to:coord, n:number}
 
@@ -48,9 +43,9 @@ export class RiskGame implements Game<RiskState, RiskMove>{
         }
         if(move.type == 'move'){
             const targetOwner = state.ownership[move.to.x][move.to.y];
+            const ownership = state.ownership.map(row=>[...row]);
+            const spareTroops = state.spareTroops.map(row=>[...row]);
             if(targetOwner === state.activePlayer){
-                const ownership = state.ownership.map(row=>[...row]);
-                const spareTroops = state.spareTroops.map(row=>[...row]);
                 spareTroops[move.to.x][move.to.y] += move.n;
                 spareTroops[move.from.x][move.from.y] -= move.n;
                 return {
@@ -58,9 +53,7 @@ export class RiskGame implements Game<RiskState, RiskMove>{
                     ownership,
                     spareTroops
                 }
-            }else{
-                const ownership = state.ownership.map(row=>[...row]);
-                const spareTroops = state.spareTroops.map(row=>[...row]);
+            }else if(targetOwner === 0){
                 ownership[move.to.x][move.to.y]=state.activePlayer;
                 spareTroops[move.to.x][move.to.y]+=(move.n - 1);
                 spareTroops[move.from.x][move.from.y]-=move.n;
@@ -69,6 +62,29 @@ export class RiskGame implements Game<RiskState, RiskMove>{
                     ownership,
                     spareTroops
                 }
+            }else{
+                const eventLog = [`Attacking ${JSON.stringify(move.to)}`]
+                if(Math.random() > 0.5){
+                    eventLog.push('Attacker Victory!')
+                    ownership[move.to.x][move.to.y]=state.activePlayer;
+                    spareTroops[move.to.x][move.to.y]+=(move.n - 1);
+                    spareTroops[move.from.x][move.from.y]-=move.n;
+                    return {
+                        activePlayer: state.activePlayer,
+                        ownership,
+                        spareTroops,
+                        eventLog
+                    }
+                }else{
+                    eventLog.push('Defender Victory!')
+                    spareTroops[move.from.x][move.from.y]-=move.n;
+                    return {
+                        activePlayer: state.activePlayer,
+                        ownership,
+                        spareTroops,
+                        eventLog
+                    }
+                }
             }
 
         }
@@ -76,7 +92,17 @@ export class RiskGame implements Game<RiskState, RiskMove>{
     }
 
     getSensibleMoves(state: RiskState): RiskMove[] {
-        return this.getValidMoves(state);
+        const attacks =  this.getValidMoves(state)
+            .filter(move=>move.type === 'move' && state.ownership[move.to.x][move.to.y] !== state.activePlayer  && state.ownership[move.to.x][move.to.y] !== 0)
+        if(attacks.length > 0) return attacks;
+        const emptyZones =  this.getValidMoves(state)
+            .filter(move=>move.type === 'move' && state.ownership[move.to.x][move.to.y] === 0)
+        if(emptyZones.length > 0) return emptyZones;
+        const hasTroops = this.getCoords(state).find(({x,y})=>state.ownership[x][y]===state.activePlayer && state.spareTroops[x][y] > 0);
+        if(hasTroops){
+            return this.getValidMoves(state).filter(({type})=>type != "end")
+        }
+        return [];
     }
 
     getStatus(state: RiskState): GameStatus {
@@ -108,12 +134,18 @@ export class RiskGame implements Game<RiskState, RiskMove>{
         const ownedTiles = this.getCoords(state).filter(coord=>state.ownership[coord.x][coord.y] === state.activePlayer);
         const withTroops = ownedTiles.filter(coord=>state.spareTroops[coord.x][coord.y] > 0);
         const possibleMovements:RiskMovementMove[] = _.flatMap(withTroops, from=>{
-            return DIRS.map(dir=>({
-                type: "move",
-                from,
-                to: {x:from.x+dir.x, y:from.y+dir.y},
-                n:1
-            }))
+            return _.flatMap(DIRS, dir=> {
+                const moves:RiskMovementMove[] = [];
+                for (let n = 1; n <= state.spareTroops[from.x][from.y]; n++) {
+                    moves.push({
+                        type: "move",
+                        from,
+                        to: {x: from.x + dir.x, y: from.y + dir.y},
+                        n
+                    })
+                }
+                return moves;
+            })
         })
         const validMovements = possibleMovements.filter(({to})=>to.x>=0 && to.x < state.ownership.length && to.y>=0 && to.y < state.ownership[to.x].length)
         return validMovements;
@@ -154,45 +186,11 @@ export class RiskGame implements Game<RiskState, RiskMove>{
             }
             str += '\n'
         }
+        if(state.eventLog){
+            state.eventLog.forEach(event=>str+=`> ${event}\n`)
+        }
         str += '\n'
         console.log(str)
     }
 }
 
-export function main(){
-    const game = new RiskGame();
-    const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new RandomStrategy()
-    const p2Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new MCTSStrategy();
-
-    const wins:Record<GameStatus, number> = {
-        [GameStatus.WIN]: 0,
-        [GameStatus.LOSE]: 0,
-        [GameStatus.DRAW]: 0,
-        [GameStatus.IN_PLAY]: 0,
-    };
-    for(let i = 0; i < 300; i++) {
-        const max_len = 1000;
-        let moves = 0;
-        let state = game.newGame()
-        try {
-            while (game.getStatus(state) === GameStatus.IN_PLAY && moves++ < max_len) {
-                const activeStrat = state.activePlayer === 1 ? p1Strat : p2Strat;
-                const move = activeStrat.pickMove(game, state);
-                state = game.applyMove(state, move);
-                game.print(state)
-            }
-            const status = game.getStatus(state);
-            wins[status] += 1
-        } catch (e) {
-            wins[GameStatus.IN_PLAY] += 1
-            console.error(e)
-            if(e.message.includes('No valid moves')){
-            }else{
-                break
-            }
-        }
-        //game.print(state)
-        console.log(wins)
-    }
-}
-main();
