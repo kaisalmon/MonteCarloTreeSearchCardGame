@@ -1,27 +1,33 @@
 import {CardGameState} from "./CardGame";
 import {PlayerKey} from "./Card";
 
-type Components = ResolveSlot<any>
-type GetSlot<T> = T extends ResolveSlot<infer R> ? R : any;
-type Slot = 'Eff'
+type Component = ResolveSlot<any>
+type GetSlot<T extends Component> = T extends ResolveSlot<infer R> ? R : any;
+type Slot = 'Eff'|'Player'
 type ResolveSlot<SLOT extends Slot> = SLOT extends 'Eff' ? Effect
+                                    : SLOT extends 'Player' ? PlayerTarget
                                     : never;
 
+
+export type PlayerTarget = {
+   resolvePlayerKey(state:CardGameState, playerKey:PlayerKey):PlayerKey;
+}
 
 export interface Effect{
   applyEffect(state:CardGameState, playerKey:PlayerKey):CardGameState;
 }
 
-export default class TextTemplate<T, ARGS extends Components[]>{
+export default class TextTemplate<T extends Component, ARGS extends Component[]>{
   template: string;
   regex: RegExp;
   slots: Slot[];
   factory:(...args:ARGS)=>T;
 
   static templates:{
-    [S in Slot]: TextTemplate<ResolveSlot<S>, Components[]>[]
+    [S in Slot]: TextTemplate<ResolveSlot<S>, Component[]>[]
   } = {
-    Eff: []
+    Eff: [],
+    Player: [],
   }
 
   constructor(slot: GetSlot<T>, template:string, factory:(...args:ARGS)=>T){
@@ -32,12 +38,12 @@ export default class TextTemplate<T, ARGS extends Components[]>{
     TextTemplate.templates[slot].push(this as any);
   }
 
-  static parse<T>(slot: GetSlot<T>, text:string):T{
-    const templates = TextTemplate.templates[slot];
-    const candidates = templates.filter(template => text.toLowerCase().match(template.regex));
+  static parse<T extends Component>(slot: GetSlot<T>, text:string):T{
+    const templates = TextTemplate.templates[slot] as TextTemplate<T, Component[]>[];
+    const candidates = templates.filter((template:TextTemplate<Component, Component[]>) => text.toLowerCase().match(template.regex));
     if(candidates.length === 0) throw new Error(`Invalid text for slot ${slot}: ${text}`);
     const errors:Error[] = [];
-    const results = candidates.map(template=>{
+    const results = candidates.map((template:TextTemplate<Component, Component[]>)=>{
       try{
         const matches = text.match(template.regex);
         const subTexts = matches ? matches.splice(1) : [];
