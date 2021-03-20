@@ -1,5 +1,6 @@
 import {Game, GameStatus} from "../MCTS/mcts";
 import chalk from 'chalk'
+import {Card} from "./Card";
 
 export interface CardGamePlayerState {
     readonly health: number;
@@ -19,10 +20,6 @@ export interface CardGameState {
 interface CardGamePlayCardMove {type:"play"; cardNumber:number}
 interface CardGameEndMove {type:"end"}
 export type CardGameMove = CardGameEndMove | CardGamePlayCardMove;
-
-export interface Card {
-    play(state:CardGameState):CardGameState;
-}
 
 export default class CardGame implements Game<CardGameState, CardGameMove>{
 
@@ -128,24 +125,6 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
 
     private applyCardPlay(state: CardGameState, cardNumber: number):CardGameState {
         const card = this.cardIndex[cardNumber];
-        const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
-        const player = state[playerKey];
-        const hand = [...player.hand]
-        hand.splice(hand.indexOf(cardNumber), 1);
-        const stateWithoutCardInHand = {
-            ...state,
-            [playerKey]: {
-                ...player,
-                hand
-            }
-        }
-        const stateAfterCard = card.play(stateWithoutCardInHand);
-        return {
-            ...stateAfterCard,
-            [playerKey]: {
-                ...stateAfterCard[playerKey],
-                discardPile: [cardNumber, ...stateAfterCard[playerKey].discardPile]
-            }
-        }
+        return card.play(state, cardNumber)
     }
 }

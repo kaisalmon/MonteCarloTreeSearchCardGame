@@ -1,10 +1,11 @@
 import {describe} from 'mocha'
-import CardGame, {Card, CardGamePlayerState, CardGameState} from "../cardgame/CardGame";
+import CardGame, {CardGameState} from "../cardgame/CardGame";
 import assert from 'assert'
 import _ from 'lodash';
+import {Card, ItemCard} from '../cardgame/Card';
 
-class IdentityCard implements Card{
-    play(state: CardGameState): CardGameState {
+class IdentityCard extends Card{
+    applyEffect(state: CardGameState): CardGameState {
         return {...state, log:[...(state.log||[]), "Played IdentityCard Card"]};
     }
 }
@@ -52,11 +53,16 @@ describe("Basic Card Game Stuff", ()=>{
          describe("Apply Card Play", ()=>{
             it("Gives correct response", ()=>{
                 const newState = game.applyMove(state, {type:"play", cardNumber:0});
-                console.log(newState);
                 assert.equal(newState.activePlayer, 1)
-                assert.deepEqual(newState.log, ["Played IdentityCard Card"])
                 assert.equal(newState.playerOne.hand.length, 5)
                 assert.equal(newState.playerOne.discardPile.length, 1)
+            })
+            it("Gives correct response for second player too", ()=>{
+                const endTurnState = game.applyMove(state, {type:"end"});
+                const newState = game.applyMove(endTurnState, {type:"play", cardNumber:0});
+                assert.equal(newState.activePlayer, 2)
+                assert.equal(newState.playerTwo.hand.length, 5)
+                assert.equal(newState.playerTwo.discardPile.length, 1)
             })
         })
     })
