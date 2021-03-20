@@ -11,7 +11,7 @@ class IdentityCard extends Card{
 }
 
 describe("Basic Card Game Stuff", ()=>{
-    describe("Smoke Test", ()=>{
+    describe("Basic Sanitiy Tests", ()=>{
         let game:CardGame;
         let state:CardGameState;
         before(()=>{

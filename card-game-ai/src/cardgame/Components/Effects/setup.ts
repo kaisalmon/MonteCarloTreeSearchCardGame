@@ -1,6 +1,6 @@
 import setupList from './ListEffect';
-import setupDraw from './DrawCardEffect';
-import setupDamage from './DamagePlayerEffect';
+import setupDraw from './RandomTransferEffect';
+import setupDamage from './ChangeHealthEffect';
 import TextTemplate, {PlayerTarget} from "../../TextTemplate";
 import {PlayerKey} from "../../Card";
 import numberToWords from 'number-to-words';

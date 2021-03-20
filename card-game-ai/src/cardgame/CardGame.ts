@@ -42,7 +42,7 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
         throw new Error("Unknown move")
     }
 
-    getSensibleMoves(state: CardGameState): CardGamePlayCardMove[] {
+    getSensibleMoves(state: CardGameState): CardGameMove[] {
         return [];
     }
 
@@ -126,5 +126,12 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     private applyCardPlay(state: CardGameState, cardNumber: number):CardGameState {
         const card = this.cardIndex[cardNumber];
         return card.play(state, cardNumber)
+    }
+
+    getHeuristic(state: CardGameState):number {
+        const bluePoints = Math.max(0, state.playerOne.health + state.playerOne.deck.length * 0.3)
+        const redPoints = Math.max(0, state.playerTwo.health + state.playerTwo.deck.length * 0.3)
+        if(bluePoints === redPoints) return 0;
+        return (bluePoints-redPoints)/(redPoints+bluePoints)
     }
 }

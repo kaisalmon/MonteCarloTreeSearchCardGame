@@ -1,6 +1,9 @@
 import _ from 'lodash';
 import promptSync from 'prompt-sync'
 import {RockPaperScissorsGame} from "./RockPaperScissors";
+import {Card} from "../cardgame/Card";
+import loadExampleDeck from "../cardgame/Data/ExampleDecks";
+import CardGame from "../cardgame/CardGame";
 const prompt = promptSync();
 
 export enum GameStatus{
@@ -98,7 +101,6 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         for(let i = 0; i < this.samples; i++){
             evaluations.forEach(evaluation=>{
                 const stateWithScrambledUnknowns = game.randomizeHiddenInfo(state);
-                console.log({state, stateWithScrambledUnknowns})
                 const newState = game.applyMove(stateWithScrambledUnknowns, evaluation.move);
                 const simulation = this.simulateGame(game, newState) ;
                 evaluation.outOf++;
@@ -165,9 +167,11 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
 }
 
 export function main(){
-    const game = new RockPaperScissorsGame();
-    const p1Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new MCTSStrategy(10,50)
-    const p2Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(50,10);
+    const cardIndex:Record<number, Card> = loadExampleDeck();
+    const deck = _.flatMap([1,2,3,4].map(()=>Object.keys(cardIndex).map(n=>parseInt(n))));
+    const game = new CardGame(cardIndex, deck);
+    const p1Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new MCTSStrategy(600,100,(state)=>game.getHeuristic(state))
+    const p2Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(10,10,(state)=>game.getHeuristic(state))
 
     const wins:Record<GameStatus, number> = {
         [GameStatus.WIN]: 0,
@@ -184,11 +188,11 @@ export function main(){
                 const activeStrat = state.activePlayer === 1 ? p1Strat : p2Strat;
                 const move = activeStrat.pickMove(game, state);
                 state = game.applyMove(state, move);
-
+                /*
                 console.log({p1:p1Strat.mood, p2:p2Strat.mood})
                 game.print(state)
                 console.log(wins)
-
+                */
             }
             const status = game.getStatus(state);
             wins[status] += 1
@@ -204,3 +208,4 @@ export function main(){
         console.log(wins)
     }
 }
+main();

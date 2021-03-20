@@ -43,8 +43,8 @@ describe("Text Template", ()=>{
     it("Can parse 'deal one damage to your opponent, then deal one damage to yourself'", ()=>{
         const effect:Effect = TextTemplate.parse('Eff', 'deal one damage to your opponent, then deal one damage to yourself');
         assert.equal(effect.constructor.name, 'ListEffect')
-        assert.equal((effect as any).a.constructor.name, 'DamagePlayerEffect')
-        assert.equal((effect as any).b.constructor.name, 'DamagePlayerEffect')
+        assert.equal((effect as any).a.constructor.name, 'ChangeHealthEffect')
+        assert.equal((effect as any).b.constructor.name, 'ChangeHealthEffect')
     });
     it("Can parse 'Your opponent draws a card'", ()=>{
         const effect:Effect = TextTemplate.parse('Eff', 'Your opponent draws a card')
