@@ -3,8 +3,9 @@ import setupDraw from './DrawCardEffect';
 import setupDamage from './DamagePlayerEffect';
 import TextTemplate, {PlayerTarget} from "../../TextTemplate";
 import {PlayerKey} from "../../Card";
+import numberToWords from 'number-to-words';
 
-const resolveSelf:PlayerTarget = {
+export const resolveSelf:PlayerTarget = {
     resolvePlayerKey(_, playerKey: PlayerKey):PlayerKey {
         return playerKey;
     }
@@ -17,6 +18,10 @@ const resolveOpponent:PlayerTarget = {
 
 
 export default function () {
+    for(let n = 0; n < 25;n++){
+        new TextTemplate('N',numberToWords.toWords(n),()=>n)
+        new TextTemplate('N',`${n}`,()=>n)
+    }
     new TextTemplate('Player','yourself',()=>resolveSelf)
     new TextTemplate('Player','you',()=>resolveSelf)
     new TextTemplate('Player','your opponent',()=>resolveOpponent)

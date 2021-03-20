@@ -24,5 +24,6 @@ class DamagePlayerEffect implements Effect{
 }
 
 export default function setup(){
-    new TextTemplate('Eff', 'deal one damage to %Player', (target:PlayerTarget)=>new DamagePlayerEffect(target, 1));
+    new TextTemplate('Eff', 'deal %N damage to %Player', (n:number, target:PlayerTarget)=>new DamagePlayerEffect(target, n));
+    new TextTemplate('Eff', '%Player loses %N health', (target:PlayerTarget, n:number)=>new DamagePlayerEffect(target, n));
 }
