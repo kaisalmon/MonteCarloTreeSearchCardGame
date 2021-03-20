@@ -2,7 +2,7 @@ import _ from 'lodash';
 import promptSync from 'prompt-sync'
 import {RiskGame} from "./risk";
 import {ConnectFourGame} from "./ConnectFour";
-import chalk from "chalk";
+import {RockPaperScissorsGame} from "./RockPaperScissors";
 const prompt = promptSync();
 
 export enum GameStatus{
@@ -23,6 +23,7 @@ export interface Game<STATE extends GameState, T>{
      getValidMoves(state:STATE):T[];
      print(state:STATE):void;
      getSensibleMoves(state:STATE):T[];
+     randomizeHiddenInfo(state:STATE):STATE;
      applyMove(state:STATE, move:T):STATE;
      getStatus(state:STATE):GameStatus;
 }
@@ -98,7 +99,9 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         const playerGoal = getPlayerGoal(state.activePlayer);
         for(let i = 0; i < this.samples; i++){
             evaluations.forEach(evaluation=>{
-                const newState = game.applyMove(state, evaluation.move);
+                const stateWithScrambledUnknowns = game.randomizeHiddenInfo(state);
+                console.log({state, stateWithScrambledUnknowns})
+                const newState = game.applyMove(stateWithScrambledUnknowns, evaluation.move);
                 const simulation = this.simulateGame(game, newState) ;
                 evaluation.outOf++;
                 if(simulation.status === playerGoal){
@@ -164,25 +167,9 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
 }
 
 export function main(){
-    const game = new RiskGame(
-        `* . . . *
-               . . . . #
-               . . . . .
-               # . . . .
-               * . . . *`
-    );
-    const heuristic = (state:StateFromGame<typeof game>)=>{
-        const bluePoints = game.getCoords()
-            .filter(({x,y})=>state.ownership[x][y]===1)
-            .length;
-        const redPoints = game.getCoords()
-            .filter(({x,y})=>state.ownership[x][y]===2)
-            .length;
-        if(redPoints===bluePoints) return 0;
-        return (bluePoints-redPoints)/(redPoints+bluePoints)
-    }
-    const p1Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new MCTSStrategy(10,50, heuristic)
-    const p2Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(50,10, heuristic);
+    const game = new RockPaperScissorsGame();
+    const p1Strat:Strategy<StateFromGame<typeof game>,  MoveFromGame<typeof game>> = new MCTSStrategy(10,50)
+    const p2Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(50,10);
 
     const wins:Record<GameStatus, number> = {
         [GameStatus.WIN]: 0,

@@ -7,12 +7,11 @@ import _ from 'lodash'
 
 type Coord = {x:number, y:number}
 interface RiskState {
-    activePlayer: 1|2,
-    troopsInHand: number,
-   // step: 'attack'|'fortify'
-    ownership: (1|2|0)[][],
-    reinforcements: number[][],
-    eventLog?:string[],
+    readonly activePlayer: 1|2,
+    readonly troopsInHand: number,
+    readonly ownership: readonly (readonly (1|2|0)[])[],
+    readonly reinforcements: readonly (readonly number[])[],
+    readonly eventLog?:readonly string[],
 }
 type RiskReinforceMove =  {type:"reinforce", to:Coord, n:number}
 type RiskAttackMove =  {type:"attack", to:Coord, n:number}
@@ -201,7 +200,7 @@ export class RiskGame implements Game<RiskState, RiskMove>{
             activePlayer: nextPlayer,
             troopsInHand: troopsInHandFromMap + bonusTroops + troopsFromLand,
             reinforcements,
-            ownership: state.ownership.map(row=>[...row]),
+            ownership: state.ownership,
         };
     }
 
@@ -212,7 +211,7 @@ export class RiskGame implements Game<RiskState, RiskMove>{
             activePlayer: state.activePlayer,
             troopsInHand: state.troopsInHand - n,
             reinforcements,
-            ownership: state.ownership.map(row=>[...row]),
+            ownership: state.ownership,
         };
     }
 
@@ -261,8 +260,8 @@ export class RiskGame implements Game<RiskState, RiskMove>{
             return {
                 activePlayer: state.activePlayer,
                 troopsInHand,
-                ownership: state.ownership.map(row=>[...row]),
-                reinforcements: state.reinforcements.map(row=>[...row]),
+                ownership: state.ownership,
+                reinforcements: state.reinforcements,
                 eventLog
             }
         }
@@ -271,10 +270,14 @@ export class RiskGame implements Game<RiskState, RiskMove>{
     private getEmptyChar({ x, y }:Coord) {
         const tile = this.tiles[x][y];
         const chars = {
-           [RiskTile.PASSABLE]: '.',
+            [RiskTile.PASSABLE]: '.',
             [RiskTile.IMPASSABLE]: '#',
             [RiskTile.BONUS]: '*'
         }
         return chars[tile]
+    }
+
+    randomizeHiddenInfo(state: RiskState): RiskState {
+        return state;
     }
 }
