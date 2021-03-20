@@ -1,7 +1,5 @@
 import _ from 'lodash';
 import promptSync from 'prompt-sync'
-import {RiskGame} from "./risk";
-import {ConnectFourGame} from "./ConnectFour";
 import {RockPaperScissorsGame} from "./RockPaperScissors";
 const prompt = promptSync();
 
@@ -206,4 +204,3 @@ export function main(){
         console.log(wins)
     }
 }
-main();
