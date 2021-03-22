@@ -8,17 +8,18 @@ const cardText = [
     'Deal three damage to your opponent and deal one damage to yourself',
     'Deal one damage to yourself then draw a card',
     'Deal one damage to yourself then draw a card',
-    'You gain three health',
+    'You gain one health',
     'You gain one health and you draw a card',
     'Your opponent discards the top card from their deck',
-    'You lose ten health',
-    'Discard the top card from your deck, then you gain four health',
+    'Discard the top card from your deck, then you gain two health',
+    'Deal two damage to your opponent',
+    'Deal three damage to your opponent',
 ]
 
 export default function():Record<number, Card>{
     setup()
-    return cardText.map(text=>{
+    return [...cardText,...cardText,...cardText,...cardText].map((text, i)=>{
         const effect = TextTemplate.parse('Eff', text);
-        return new EffectCard(effect);
+        return new EffectCard(effect,text, `#${i}`);
     })
 }

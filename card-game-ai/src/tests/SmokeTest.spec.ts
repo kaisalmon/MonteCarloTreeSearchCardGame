@@ -14,7 +14,7 @@ describe("Smoketest", ()=> {
         const game = new CardGame(cardIndex, deck);
         const initialState = game.newGame();
 
-        const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(100,100,(state)=>game.getHeuristic(state))
+        const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(100,10,(state)=>game.getHeuristic(state))
         const p2Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(10,10,(state)=>game.getHeuristic(state))
         let moves = 0;
         let max_len = 1000;
@@ -24,7 +24,6 @@ describe("Smoketest", ()=> {
                 const move = activeStrat.pickMove(game, state);
                 state = game.applyMove(state, move);
         }
-        console.log(game.getStatus(state))
         if(game.getStatus(state)===GameStatus.IN_PLAY){
             assert.fail("Game should have ended")
         }

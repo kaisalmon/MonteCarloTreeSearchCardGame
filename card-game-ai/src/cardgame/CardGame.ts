@@ -12,14 +12,18 @@ export interface CardGamePlayerState {
 
 export interface CardGameState {
     readonly activePlayer: 1|2;
+    readonly step: 'draw'|'play'
     readonly playerOne: CardGamePlayerState
     readonly playerTwo: CardGamePlayerState;
     readonly log?:string[],
 }
 
 interface CardGamePlayCardMove {type:"play"; cardNumber:number}
+interface CardGameDiscardCardMove{type:"discard"; cardNumber:number}
 interface CardGameEndMove {type:"end"}
-export type CardGameMove = CardGameEndMove | CardGamePlayCardMove;
+export type CardGameMove = CardGameEndMove | CardGamePlayCardMove | CardGameDiscardCardMove;
+
+const HAND_SIZE = 6;
 
 export default class CardGame implements Game<CardGameState, CardGameMove>{
 
@@ -38,6 +42,8 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
             return this.applyEndMove(state);
         }else if(move.type === "play"){
             return this.applyCardPlay(state, move.cardNumber)
+        }else if(move.type === "discard"){
+            return this.applyCardDiscard(state, move.cardNumber)
         }
         throw new Error("Unknown move")
     }
@@ -47,8 +53,8 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     }
 
     getStatus(state: CardGameState): GameStatus {
-        const p1Dead = state.playerOne.deck.length === 0 ||  state.playerOne.health < 0;
-        const p2Dead = state.playerTwo.deck.length === 0 ||  state.playerTwo.health < 0;
+        const p1Dead = state.playerOne.deck.length === 0 ||  state.playerOne.health <= 0;
+        const p2Dead = state.playerTwo.deck.length === 0 ||  state.playerTwo.health <= 0;
         if(p1Dead && p2Dead) return GameStatus.DRAW;
         if(p1Dead) return GameStatus.LOSE;
         if(p2Dead) return GameStatus.WIN;
@@ -56,18 +62,22 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     }
 
     getValidMoves(state: CardGameState): CardGameMove[] {
+        if(state.step === 'draw'){
+            return this.getDiscardMoves(state);
+        }
         return [{type:"end"}, ...this.getCardMoves(state)]
     }
 
     newGame(): CardGameState {
         const newPlayer = {
             hand:[],
-            health: 10,
+            health: 30,
             discardPile:[],
             board:[]
         }
         const preGame:CardGameState = {
             activePlayer: 2, //Will flip when we run end turn logic
+            step: 'play', // Will also flip
             playerOne:{
                 deck: this.deckOne,
                 ...newPlayer
@@ -87,16 +97,37 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     }
 
     randomizeHiddenInfo(state: CardGameState): CardGameState {
-        return state;
+        const opponentKey = state.activePlayer === 1 ? 'playerTwo' : 'playerOne'
+
+        // Put their hand back into the deck, then draw up to the same number
+        const deck = [...state[opponentKey].deck, ...state[opponentKey].hand];
+        const hand = []
+        for(let i = 0; i < state[opponentKey].hand.length; i++){
+           const drawIndex = Math.floor(Math.random() * deck.length);
+            hand.push(...deck.splice(drawIndex, 1))
+        }
+
+        return {
+            ...state,
+            [opponentKey]:{
+                ...state[opponentKey],
+                hand,
+                deck
+            }
+        };
     }
 
     private getCardMoves(state: CardGameState):CardGamePlayCardMove[] {
         const activePlayer = state.activePlayer === 1 ? state.playerOne : state.playerTwo;
         return activePlayer.hand.map(cardNumber=>({type:"play", cardNumber}))
     }
+   private getDiscardMoves(state: CardGameState):CardGameDiscardCardMove[] {
+        const activePlayer = state.activePlayer === 1 ? state.playerOne : state.playerTwo;
+        return activePlayer.hand.map(cardNumber=>({type:"discard", cardNumber}))
+    }
 
     private applyEndMove(state: CardGameState):CardGameState {
-        const HAND_SIZE = 6;
+        const DRAW_UP_TO = 7;
 
         const activePlayer = state.activePlayer === 1 ? 2 : 1;
         const playerKey = activePlayer  === 1 ? 'playerOne' : 'playerTwo';
@@ -105,7 +136,7 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
         const deck = [...player.deck];
         const hand = [...player.hand];
 
-        while(hand.length < HAND_SIZE && deck.length > 0){
+        while(hand.length < DRAW_UP_TO && deck.length > 0){
             const drawIndex = Math.floor(Math.random() * deck.length);
             hand.push(...deck.splice(drawIndex, 1))
         }
@@ -118,6 +149,7 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
 
         return {
             ...state,
+            step: 'draw',
             [playerKey]: newPlayer,
             activePlayer,
         }
@@ -127,10 +159,27 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
         const card = this.cardIndex[cardNumber];
         return card.play(state, cardNumber)
     }
+    private applyCardDiscard(state: CardGameState, cardNumber: number):CardGameState {
+        const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
+        const player = state[playerKey];
+
+        const hand = [...player.hand];
+        const discardPile = [...player.discardPile];
+        discardPile.push(...hand.splice(hand.indexOf(cardNumber), 1))
+        return {
+            ...state,
+            step: hand.length > HAND_SIZE ? 'draw' :'play',
+            [playerKey]:{
+                ...player,
+                hand,
+                discardPile
+            }
+        }
+    }
 
     getHeuristic(state: CardGameState):number {
-        const bluePoints = Math.max(0, state.playerOne.health + state.playerOne.deck.length * 0.3)
-        const redPoints = Math.max(0, state.playerTwo.health + state.playerTwo.deck.length * 0.3)
+        const bluePoints = Math.max(0, state.playerOne.health * state.playerOne.deck.length)
+        const redPoints = Math.max(0, state.playerTwo.health * state.playerTwo.deck.length)
         if(bluePoints === redPoints) return 0;
         return (bluePoints-redPoints)/(redPoints+bluePoints)
     }

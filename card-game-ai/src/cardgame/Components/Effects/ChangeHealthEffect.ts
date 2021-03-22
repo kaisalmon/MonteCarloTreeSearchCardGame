@@ -1,8 +1,6 @@
 import TextTemplate, {Effect, PlayerTarget} from "../../TextTemplate";
 import {CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
-import {Simulate} from "react-dom/test-utils";
-import play = Simulate.play;
 
 class ChangeHealthEffect implements Effect{
     target:PlayerTarget
@@ -25,7 +23,7 @@ class ChangeHealthEffect implements Effect{
 
 export default function setup(){
     new TextTemplate('Eff', 'deal %N damage to %Player', (n:number, target:PlayerTarget)=>new ChangeHealthEffect(target, -n));
-    new TextTemplate('Eff', 'remove %N damage to %Player', (n:number, target:PlayerTarget)=>new ChangeHealthEffect(target, -n));
+    new TextTemplate('Eff', 'remove %N damage to %Player', (n:number, target:PlayerTarget)=>new ChangeHealthEffect(target, n));
     new TextTemplate('Eff', '%Player loses? %N health', (target:PlayerTarget, n:number)=>new ChangeHealthEffect(target, -n));
-    new TextTemplate('Eff', '%Player gains? %N health', (target:PlayerTarget, n:number)=>new ChangeHealthEffect(target, -n));
+    new TextTemplate('Eff', '%Player gains? %N health', (target:PlayerTarget, n:number)=>new ChangeHealthEffect(target, n));
 }

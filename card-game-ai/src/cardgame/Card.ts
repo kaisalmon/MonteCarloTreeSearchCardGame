@@ -4,6 +4,8 @@ import {Effect} from "./TextTemplate";
 export type PlayerKey = 'playerOne'|'playerTwo'
 
 export abstract class Card{
+    abstract getName():string;
+    abstract getText():string;
     abstract applyEffect(state:CardGameState, playerKey:PlayerKey):CardGameState;
 
     private preEffect(state:CardGameState, cardNumber:number, playerKey:PlayerKey):CardGameState{
@@ -39,16 +41,27 @@ export abstract class Card{
 
 export class EffectCard extends Card{
     effect: Effect;
-    constructor(effect:Effect) {
+    name: string;
+    text: string;
+    getName(): string {
+        return this.name;
+    }
+
+    getText(): string {
+        return this.text;
+    }
+    constructor(effect:Effect, text:string, name:string) {
         super();
         this.effect = effect;
+        this.text = text;
+        this.name = name;
     }
     applyEffect(state: CardGameState, playerKey:PlayerKey): CardGameState {
         return this.effect.applyEffect(state, playerKey)
     }
 }
 
-export class ItemCard extends Card{
+export abstract class ItemCard extends Card{
     applyEffect(state: CardGameState): CardGameState {
         return state;
     }
@@ -62,5 +75,6 @@ export class ItemCard extends Card{
             }
         }
     }
-
+    abstract getName():string;
+    abstract getText():string;
 }

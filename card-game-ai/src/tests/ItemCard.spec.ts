@@ -3,7 +3,7 @@ import {Card, ItemCard} from "../cardgame/Card";
 import assert from 'assert';
 import CardGame, {CardGameState} from "../cardgame/CardGame";
 
-describe("Item Card", ()=>{
+describe("Item CardDisplay", ()=>{
     it("Is added to the board, not the discard", ()=>{
          const cardIndex:Record<number, Card> = {
                 42: new ItemCard(),
