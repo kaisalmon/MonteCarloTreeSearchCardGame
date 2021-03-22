@@ -79,6 +79,8 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
             {displayHand.map(n=>(showingTempCards || !cardsBeingPlayed.includes(n)) && <div key={n}>
                 <CardDisplay
                     onClick={()=>onCardClick(n)}
+                    isOpponent={isHidden}
+                    isHidden={isHidden && !cardsBeingPlayed.includes(n)}
                     card={game.cardIndex[n]}
                     canBePlayed={isActive && !isHidden && gamestate.step === 'play' && !cardsBeingPlayed.includes(n)}
                     canBeDiscarded={isActive && !isHidden && gamestate.step === 'draw' && !cardsBeingPlayed.includes(n)}
