@@ -3,6 +3,7 @@ import React, {CSSProperties, FunctionComponent, useEffect} from "react";
 import CardDisplay  from "./CardDisplay";
 
 import FlipMove from 'react-flip-move';
+import CardPile from "./CardPile";
 
 type GameBoardProps = {
     gamestate: CardGameState;
@@ -29,16 +30,6 @@ const WRAPPER_STYLE:CSSProperties = {
 const ACTIVE_WRAPPER_STYLE = {
     ...WRAPPER_STYLE,
     background: 'gold',
-}
-
-const PILE_STYLE:CSSProperties = {
-    border: '1px solid black',
-    fontSize: 10,
-    borderRadius: 3,
-    width: 40,
-    height: 60,
-    margin: 5,
-    display: 'inline-block'
 }
 
 const HAND_STYLE = {
@@ -88,14 +79,14 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
                 />
             </div>)}
         </FlipMove>
-        <div style={PILE_STYLE}>
-            Deck
-            <div>{player.deck.length}</div>
-        </div>
-        <div style={PILE_STYLE}>
-            Discard
-            <div>{player.discardPile.length}</div>
-        </div>
+        <CardPile
+            label="deck"
+            cards={player.deck.map(n=>isHidden ? '?' : game.cardIndex[n] )}
+        />
+        <CardPile
+            label="discard"
+            cards={player.discardPile.map(n=>game.cardIndex[n])}
+        />
     </div>
 }
 
