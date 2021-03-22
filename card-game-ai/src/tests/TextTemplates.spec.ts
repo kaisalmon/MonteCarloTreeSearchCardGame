@@ -1,3 +1,5 @@
+import {describe, it, before} from 'mocha'
+
 import setupEffects from '../cardgame/Components/Effects/setup'
 import assert from 'assert';
 import TextTemplate, {Effect} from "../cardgame/TextTemplate";
@@ -5,6 +7,7 @@ import {CardGameState} from "../cardgame/CardGame";
 
 const EXAMPLE_STATE:CardGameState = {
       activePlayer: 1,
+        step: "play",
       playerOne: {
         deck: [10],
         hand: [ 10 ],
@@ -59,4 +62,12 @@ describe("Text Template", ()=>{
         assert.equal(state.playerOne.health, 9);
         assert.equal(state.playerTwo.health, 7);
     });
+    describe("Error Handling", ()=>{
+        it("Response with the correct error message", ()=>{
+            assert.throws(()=>TextTemplate.parse("Eff", "Deal three damage to fred"), err=>{
+                assert.equal(err.message, 'Invalid text for slot Player: fred')
+                return true;
+            })
+        })
+    })
 });

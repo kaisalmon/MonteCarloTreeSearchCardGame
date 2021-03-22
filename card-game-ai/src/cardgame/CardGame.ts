@@ -178,8 +178,8 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     }
 
     getHeuristic(state: CardGameState):number {
-        const bluePoints = Math.max(0, state.playerOne.health * state.playerOne.deck.length)
-        const redPoints = Math.max(0, state.playerTwo.health * state.playerTwo.deck.length)
+        const bluePoints = Math.max(0, state.playerOne.health * Math.pow(state.playerOne.deck.length,3))
+        const redPoints = Math.max(0, state.playerTwo.health * Math.pow(state.playerTwo.deck.length,3))
         if(bluePoints === redPoints) return 0;
         return (bluePoints-redPoints)/(redPoints+bluePoints)
     }

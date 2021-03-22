@@ -1,5 +1,6 @@
 import {CardGameState} from "./CardGame";
 import {PlayerKey} from "./Card";
+import _ from 'lodash'
 
 type Component = ResolveSlot<any>
 type GetSlot<T extends Component> = T extends ResolveSlot<infer R> ? R : any;
@@ -64,8 +65,9 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]>
       }
     }).filter(x=>x);
     if(results.length === 0){
-      if(errors.length > 1){
-        throw new Error("Invalid text: "+text);
+      const errorMessages = _.uniq(errors.map(e=>e.message));
+      if(errorMessages.length > 1){
+        throw new Error(errorMessages.join("; "));
       }else{
         throw errors[0];
       }
