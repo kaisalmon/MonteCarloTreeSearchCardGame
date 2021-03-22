@@ -27,7 +27,7 @@
     "react-flip-move": "^3.0.4",
     "react-popper": "^2.2.4",
     "react-popper-tooltip": "^4.2.0",
-    "react-scripts": "4.0.3",
+    "react-scripts": "^4.0.3",
     "react-shuffle": "^2.1.0",
     "ts-mocha": "^8.0.0",
     "typescript": "^4.1.2",
@@ -35,7 +35,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && mv ./build ../docs",
     "test": "ts-mocha -p ./tsconfig.json src/**/*.spec.ts",
     "eject": "react-scripts eject",
     "smoke": "npx ts-node -O {\\\\\"module\\\\\":\\\\\"commonjs\\\\\"} src/MCTS/smoketest.ts"
@@ -48,9 +48,7 @@
   },
   "browserslist": {
     "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
+      "last 1 chrome version"
     ],
     "development": [
       "last 1 chrome version",
