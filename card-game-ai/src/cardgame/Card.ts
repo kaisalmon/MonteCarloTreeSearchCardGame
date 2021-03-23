@@ -1,5 +1,5 @@
 import {CardGameState} from "./CardGame";
-import {Effect} from "./Components/TextTemplate";
+import {Effect, Fizzle} from "./Components/TextTemplate";
 
 export type PlayerKey = 'playerOne'|'playerTwo'
 
@@ -33,9 +33,14 @@ export abstract class Card{
 
     play(state:CardGameState, cardNumber:number):CardGameState{
         const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
-        const afterPreEffect = this.preEffect(state,cardNumber,playerKey);
-        const afterEffect = this.applyEffect(afterPreEffect, playerKey);
-        return this.postEffect(afterEffect,cardNumber,playerKey);
+        try{
+            const afterPreEffect = this.preEffect(state,cardNumber,playerKey);
+            const afterEffect = this.applyEffect(afterPreEffect, playerKey);
+            return this.postEffect(afterEffect,cardNumber,playerKey);
+        }catch(e){
+            if(!Fizzle.isFizzle(e)) throw e;
+            return this.postEffect(e.returnState, cardNumber, playerKey)
+        }
     }
 }
 

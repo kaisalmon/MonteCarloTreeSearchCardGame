@@ -1,4 +1,4 @@
-import setup from '../Components/Effects/setup';
+import setup from '../Components/setup';
 import {Card, EffectCard} from "../Card";
 import TextTemplate from "../Components/TextTemplate";
 

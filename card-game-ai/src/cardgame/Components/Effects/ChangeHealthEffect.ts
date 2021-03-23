@@ -10,7 +10,7 @@ class ChangeHealthEffect implements Effect{
         this.amount=amount;
     }
     applyEffect(state: CardGameState, ctx:ExecutionContext): CardGameState {
-        const targetKey = this.target.resolvePlayerKey(state, ctx);
+        const targetKey = this.target.resolveValue(state, ctx);
         return {
             ...state,
             [targetKey]:{
@@ -22,9 +22,10 @@ class ChangeHealthEffect implements Effect{
 }
 
 export default function setup(){
-    new TextTemplate('Eff', '%Player take %N damage', ( target:PlayerTarget, n:number)=>new ChangeHealthEffect(target, -n));
+    new TextTemplate('Eff', '%Player takes? %N damage', ( target:PlayerTarget, n:number)=>new ChangeHealthEffect(target, -n));
     new TextTemplate('Eff', 'deal %N damage to %Player', (n:number, target:PlayerTarget)=>new ChangeHealthEffect(target, -n));
-    new TextTemplate('Eff', 'remove %N damage to %Player', (n:number, target:PlayerTarget)=>new ChangeHealthEffect(target, n));
     new TextTemplate('Eff', '%Player loses? %N health', (target:PlayerTarget, n:number)=>new ChangeHealthEffect(target, -n));
+
+    new TextTemplate('Eff', 'remove %N damage to %Player', (n:number, target:PlayerTarget)=>new ChangeHealthEffect(target, n));
     new TextTemplate('Eff', '%Player gains? %N health', (target:PlayerTarget, n:number)=>new ChangeHealthEffect(target, n));
 }

@@ -3,9 +3,19 @@ import CardGame, {CardGameState} from "../cardgame/CardGame";
 import assert from 'assert'
 import _ from 'lodash';
 import {Card, ItemCard} from '../cardgame/Card';
+import {ExecutionContext} from "../cardgame/Components/TextTemplate";
 
 class IdentityCard extends Card{
-    applyEffect(state: CardGameState): CardGameState {
+
+    getName(): string {
+        return "IC";
+    }
+
+    getText(): string {
+        return "";
+    }
+
+    applyEffect(state: CardGameState, playerKey: "playerOne" | "playerTwo"): CardGameState {
         return {...state, log:[...(state.log||[]), "Played IdentityCard CardDisplay"]};
     }
 }

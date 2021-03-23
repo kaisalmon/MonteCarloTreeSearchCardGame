@@ -1,12 +1,13 @@
 import {CardGameState} from "../CardGame";
-import {PlayerKey} from "../Card";
+import {Card, PlayerKey} from "../Card";
 import _ from 'lodash'
 
 type Component = ResolveSlot<any>
 type GetSlot<T extends Component> = T extends ResolveSlot<infer R> ? R : any;
-type Slot = 'Eff'|'Player'|'N'
+type Slot = 'Eff'|'Player'|'N'|'Cond'
 type ResolveSlot<SLOT extends Slot> = SLOT extends 'Eff' ? Effect
                                     : SLOT extends 'Player' ? PlayerTarget
+                                    : SLOT extends 'Cond' ? Resolver<boolean>
                                     : SLOT extends 'N' ? number
                                     : never;
 
@@ -16,10 +17,8 @@ export type ExecutionContext = {
 }
 
 export type Resolver<T> = {
-   resolvePlayerKey(state:CardGameState, ctx:ExecutionContext):T;
+   resolveValue(state:CardGameState, ctx:ExecutionContext):T;
 }
-
-
 
 export type PlayerTarget = Resolver<PlayerKey>
 
@@ -27,18 +26,19 @@ export interface Effect{
   applyEffect(state:CardGameState, executionContext:ExecutionContext):CardGameState;
 }
 
-export default class TextTemplate<T extends Component, ARGS extends Component[]>{
+export default class TextTemplate<T extends Component, ARGS extends Component[]=Component[]>{
   template: string;
   regex: RegExp;
   slots: Slot[];
   factory:(...args:ARGS)=>T;
 
   static templates:{
-    [S in Slot]: TextTemplate<ResolveSlot<S>, Component[]>[]
+    [S in Slot]: TextTemplate<ResolveSlot<S>>[]
   } = {
     Eff: [],
     Player: [],
-    N:[]
+    N:[],
+    Cond:[]
   }
 
   constructor(slot: GetSlot<T>, template:string, factory:(...args:ARGS)=>T){
@@ -54,11 +54,11 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]>
 
   static parse<SLOT extends Slot>(slot: SLOT, _text:string):ResolveSlot<SLOT>{
     const text = (_text||"").trim()
-    const templates = TextTemplate.templates[slot] as TextTemplate<ResolveSlot<SLOT>, Component[]>[];
-    const candidates = templates.filter((template:TextTemplate<Component, Component[]>) => text.toLowerCase().match(template.regex));
+    const templates = TextTemplate.templates[slot] as TextTemplate<ResolveSlot<SLOT>>[];
+    const candidates = templates.filter((template:TextTemplate<Component>) => text.toLowerCase().match(template.regex));
     if(candidates.length === 0) throw new Error(`Invalid text for slot ${slot}: ${text}`);
     const errors:Error[] = [];
-    const results = candidates.map((template:TextTemplate<Component, Component[]>)=>{
+    const results = candidates.map((template:TextTemplate<Component>)=>{
       try{
         const matches = text.toLowerCase().match(template.regex);
         const subTexts = matches ? matches.splice(1) : [];
@@ -91,7 +91,20 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]>
     this.templates = {
       Eff: [],
       Player: [],
-      N:[]
+      N:[],
+      Cond:[],
     }
+  }
+}
+
+export class Fizzle extends Error{
+  isFizzle = true
+  returnState: CardGameState;
+  constructor(returnState: CardGameState) {
+    super("Effect Fizzle!");
+    this.returnState = returnState;
+  }
+  static isFizzle(e:any):e is Fizzle{
+    return e.isFizzle;
   }
 }
