@@ -4,7 +4,8 @@ import loadExampleDeck from "../cardgame/Data/ExampleDecks";
 import {Card} from "../cardgame/Card";
 import _ from 'lodash'
 import {GameStatus, MCTSStrategy, MoveFromGame, RandomStrategy, StateFromGame, Strategy} from "../MCTS/mcts";
-import assert from 'assert'
+import setupEffects from '../cardgame/Components/Effects/setup'
+import TextTemplate from "../cardgame/Components/TextTemplate";
 
 describe("Smoketest", ()=> {
 
@@ -14,18 +15,19 @@ describe("Smoketest", ()=> {
         const game = new CardGame(cardIndex, deck);
         const initialState = game.newGame();
 
-        const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(100,10,(state)=>game.getHeuristic(state))
-        const p2Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(10,10,(state)=>game.getHeuristic(state))
+        const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(3,3)
+        const p2Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(3,3)
         let moves = 0;
-        let max_len = 1000;
+        let max_len = 100;
         let state = initialState;
-        while (game.getStatus(state) === GameStatus.IN_PLAY && moves++ < max_len) {
-                const activeStrat = state.activePlayer === 1 ? p1Strat : p2Strat;
-                const move = activeStrat.pickMove(game, state);
-                state = game.applyMove(state, move);
+        while (game.getStatus(state) === GameStatus.IN_PLAY && moves < max_len) {
+            moves += 1;
+            const activeStrat = state.activePlayer === 1 ? p1Strat : p2Strat;
+            const move = activeStrat.pickMove(game, state);
+            state = game.applyMove(state, move);
         }
-        if(game.getStatus(state)===GameStatus.IN_PLAY){
-            assert.fail("Game should have ended")
-        }
-    }, 10000)
+    })
+
+    before(()=>setupEffects())
+    after(()=>TextTemplate.clear())
 });

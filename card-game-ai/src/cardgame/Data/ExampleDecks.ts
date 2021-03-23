@@ -1,6 +1,6 @@
 import setup from '../Components/Effects/setup';
 import {Card, EffectCard} from "../Card";
-import TextTemplate from "../TextTemplate";
+import TextTemplate from "../Components/TextTemplate";
 
 const cardText = [
     'Deal one damage to your opponent',
@@ -17,9 +17,11 @@ const cardText = [
 ]
 
 export default function():Record<number, Card>{
-    setup()
-    return [...cardText,...cardText,...cardText,...cardText].map((text, i)=>{
-        const effect = TextTemplate.parse('Eff', text);
-        return new EffectCard(effect,text, `#${i}`);
-    })
+    if(Object.values(TextTemplate.templates).some(arr=>arr.length > 0)) {
+        return [...cardText, ...cardText, ...cardText, ...cardText].map((text, i) => {
+            const effect = TextTemplate.parse('Eff', text);
+            return new EffectCard(effect, text, `#${i}`);
+        })
+    }
+    throw new Error("Text Templates not setup")
 }

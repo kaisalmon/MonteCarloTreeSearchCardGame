@@ -1,5 +1,5 @@
 import {CardGameState} from "./CardGame";
-import {Effect} from "./TextTemplate";
+import {Effect} from "./Components/TextTemplate";
 
 export type PlayerKey = 'playerOne'|'playerTwo'
 
@@ -57,7 +57,10 @@ export class EffectCard extends Card{
         this.name = name;
     }
     applyEffect(state: CardGameState, playerKey:PlayerKey): CardGameState {
-        return this.effect.applyEffect(state, playerKey)
+        const ctx = {
+            playerKey
+        }
+        return this.effect.applyEffect(state, ctx)
     }
 }
 

@@ -1,4 +1,4 @@
-import TextTemplate, {Effect, PlayerTarget} from "../../TextTemplate";
+import TextTemplate, {Effect, ExecutionContext, PlayerTarget} from "../TextTemplate";
 import {CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 
@@ -9,8 +9,8 @@ class ChangeHealthEffect implements Effect{
         this.target=target;
         this.amount=amount;
     }
-    applyEffect(state: CardGameState, playerKey:PlayerKey): CardGameState {
-        const targetKey = this.target.resolvePlayerKey(state, playerKey);
+    applyEffect(state: CardGameState, ctx:ExecutionContext): CardGameState {
+        const targetKey = this.target.resolvePlayerKey(state, ctx);
         return {
             ...state,
             [targetKey]:{
@@ -22,6 +22,7 @@ class ChangeHealthEffect implements Effect{
 }
 
 export default function setup(){
+    new TextTemplate('Eff', '%Player take %N damage', ( target:PlayerTarget, n:number)=>new ChangeHealthEffect(target, -n));
     new TextTemplate('Eff', 'deal %N damage to %Player', (n:number, target:PlayerTarget)=>new ChangeHealthEffect(target, -n));
     new TextTemplate('Eff', 'remove %N damage to %Player', (n:number, target:PlayerTarget)=>new ChangeHealthEffect(target, n));
     new TextTemplate('Eff', '%Player loses? %N health', (target:PlayerTarget, n:number)=>new ChangeHealthEffect(target, -n));

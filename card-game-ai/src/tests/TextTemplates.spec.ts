@@ -2,7 +2,7 @@ import {describe, it, before} from 'mocha'
 
 import setupEffects from '../cardgame/Components/Effects/setup'
 import assert from 'assert';
-import TextTemplate, {Effect} from "../cardgame/TextTemplate";
+import TextTemplate, {Effect} from "../cardgame/Components/TextTemplate";
 import {CardGameState} from "../cardgame/CardGame";
 
 const EXAMPLE_STATE:CardGameState = {
@@ -30,6 +30,9 @@ describe("Text Template", ()=>{
     before(()=>{
         setupEffects();
     })
+    after(()=>{
+        TextTemplate.clear();
+    })
     it("TextTemplates has templates", ()=>{
         assert(TextTemplate.templates.Eff.length > 0);
     });
@@ -51,16 +54,22 @@ describe("Text Template", ()=>{
     });
     it("Can parse 'Your opponent draws a card'", ()=>{
         const effect:Effect = TextTemplate.parse('Eff', 'Your opponent draws a card')
-        const state = effect.applyEffect(EXAMPLE_STATE, "playerOne");
+        const state = effect.applyEffect(EXAMPLE_STATE, {playerKey: "playerOne"});
         assert.equal(state.playerTwo.hand.length, 1);
         assert.equal(state.playerTwo.deck.length, 0);
     });
     it("Can Exec 'deal one damage to your opponent, and deal one damage to yourself'", ()=>{
         const effect:Effect = TextTemplate.parse('Eff', 'deal three damage to your opponent, and deal one damage to yourself');
 
-        const state = effect.applyEffect(EXAMPLE_STATE, "playerOne");
+        const state = effect.applyEffect(EXAMPLE_STATE, {playerKey: "playerOne"});
         assert.equal(state.playerOne.health, 9);
         assert.equal(state.playerTwo.health, 7);
+    });
+    it("Can Exec 'deal one damage to your opponent, and they take one damage'", ()=>{
+        const effect:Effect = TextTemplate.parse('Eff', 'deal three damage to your opponent, and they take one damage');
+
+        const state = effect.applyEffect(EXAMPLE_STATE, {playerKey: "playerOne"});
+        assert.equal(state.playerTwo.health, 6);
     });
     describe("Error Handling", ()=>{
         it("Response with the correct error message", ()=>{
