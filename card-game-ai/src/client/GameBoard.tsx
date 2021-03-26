@@ -2,6 +2,8 @@ import CardGame, {CardGameMove, CardGamePlayerState, CardGameState} from "../car
 import React, {CSSProperties, FunctionComponent, useEffect} from "react";
 import CardDisplay  from "./CardDisplay";
 
+import _ from 'lodash'
+
 import FlipMove from 'react-flip-move';
 import CardPile from "./CardPile";
 
@@ -52,11 +54,9 @@ const HEALTH_STYLE:CSSProperties = {
 }
 
 const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game, player, isActive, isHidden, lastmove, gamestate})=>{
-    const [showingTempCards, setShowingTempCards] = React.useState(true)
     const cardsBeingPlayed = lastmove && lastmove.type === 'play' ? [lastmove.cardNumber] : []
 
-
-    const displayHand = [...player.hand, ...cardsBeingPlayed].sort((a,b)=>a-b)
+    const displayHand = [...player.hand, ...cardsBeingPlayed].sort((a,b)=>a-b);
 
     return <div style={isActive ? ACTIVE_WRAPPER_STYLE : WRAPPER_STYLE}>
         <div style={HEALTH_WRAPPER_STYLE}>
@@ -66,8 +66,7 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
         </div>
         </div>
         <FlipMove style={{...HAND_STYLE}}>
-            {displayHand.length === 0 &&  (<pre>(Empty Hand)</pre>)}
-            {displayHand.map(n=>(showingTempCards || !cardsBeingPlayed.includes(n)) && <div key={n}>
+            {displayHand.map(n=><div key={n+' '+game.cardIndex[n].getName()}>
                 <CardDisplay
                     onClick={()=>onCardClick(n)}
                     isOpponent={isHidden}

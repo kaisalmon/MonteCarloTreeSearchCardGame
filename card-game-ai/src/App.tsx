@@ -3,75 +3,95 @@ import './App.css';
 import {Card} from "./cardgame/Card";
 import loadExampleDeck from "./cardgame/Data/ExampleDecks";
 import CardGame, {CardGameMove, CardGameState} from "./cardgame/CardGame";
-import {GameStatus, MCTSStrategy, MoveFromGame, RandomStrategy, StateFromGame, Strategy} from "./MCTS/mcts";
+import {GameStatus} from "./MCTS/mcts";
 import GameBoard from "./client/GameBoard";
 import setupEffects from "./cardgame/Components/setup";
+import Worker from "./client/worker";
+import delay from "delay";
+import {WorkerResponse} from "./client/worker/worker";
+
+type CombinedGameState = {
+    state: CardGameState,
+    lastMove?: CardGameMove
+}
 
 function getMoveFromCardClick(gamestate:CardGameState, cardNumber:number):CardGameMove{
     if(gamestate.step=='draw')return {type:'discard', cardNumber}
     else return {type:'play', cardNumber}
 }
 
-function App() {
-     setupEffects();
-  const cardIndex:Record<number, Card> = useMemo(()=>loadExampleDeck(), []);
-  const deck = useMemo(()=>Object.keys(cardIndex).map(n=>parseInt(n)), [cardIndex]);
-  const game = useMemo(()=>new CardGame(cardIndex, deck), [cardIndex, deck]);
-  const playerStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new RandomStrategy()
-  const greedyStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(1,1,(gs)=>game.getHeuristic(gs));
-  const opponentStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(2500,200, game.getHeuristic)
-  const [gamestate, setGamestate] = React.useState(game.newGame());
-  const status = useMemo(()=>game.getStatus(gamestate),[game, gamestate])
+const worker = new Worker();
 
-  const [t, setT] = React.useState(NaN);
-  const [mood, setMood] = React.useState(opponentStrat.mood);
-  const [lastmove, setLastMove] = React.useState<CardGameMove>({type:"end"});
+function App() {
+    setupEffects();
+  const cardIndex:Record<number, Card> = useMemo(()=>loadExampleDeck(), []);
+  const game = useMemo(()=>new CardGame(cardIndex), [cardIndex]);
+
+  const [combinedGameState, setCombinedGameState] = React.useState<CombinedGameState>({
+      state: game.newGame()
+  });
+  const status = useMemo(()=>game.getStatus(combinedGameState.state),[game, combinedGameState.state])
+
+  const [mood, setMood] = React.useState('...');
+
+    const [isLoading, setIsLoading] = React.useState(false);
+
+    React.useEffect(()=>{
+        let nextTimeout:number = 0;
+        const loop = async ()=>{
+            if(combinedGameState.state.activePlayer === 2 && !isLoading && game.getStatus(combinedGameState.state) === GameStatus.IN_PLAY){
+                setIsLoading(true)
+                const delay_time = combinedGameState.lastMove?.type === 'end' ? 400 : 1000;
+                const [{mood, move}]:[WorkerResponse, void] = await Promise.all([worker.processData(combinedGameState.state), delay(delay_time)])
+                const newState = game.applyMove(combinedGameState.state, move);
+                setMood(mood)
+                setIsLoading(false)
+                setCombinedGameState({
+                    state:newState,
+                    lastMove: move
+                })
+            }
+        }
+        nextTimeout = window.setTimeout(loop,0);
+        return ()=>window.clearTimeout(nextTimeout);
+    },[combinedGameState, game, isLoading])
 
   return (
     <div className="App">
         {status !== GameStatus.IN_PLAY && <h1>{status}</h1>}
       <GameBoard
-          gamestate={gamestate}
+          gamestate={combinedGameState.state}
           game={game}
-          lastmove={lastmove}
+          lastmove={combinedGameState.lastMove||{type:'end'}}
           onCardClick={(n)=>{
               if(status !== GameStatus.IN_PLAY)return;
-              const move = getMoveFromCardClick(gamestate,n)
-              const newState = game.applyMove(gamestate, move);
-              setGamestate(newState)
-              setLastMove(move)
+              const move = getMoveFromCardClick(combinedGameState.state,n)
+              const newState = game.applyMove(combinedGameState.state, move);
+            setCombinedGameState({
+                state:newState,
+                lastMove: move
+            })
           }}
       />
-      <button
-          disabled={status!==GameStatus.IN_PLAY || gamestate.activePlayer === 1}
-          onClick={()=>{
-              const t = performance.now()
-              const strat = (gamestate.activePlayer === 1 ? playerStrat : opponentStrat);
-              const move = strat.pickMove(game,gamestate)
-              setT(performance.now() - t)
-              const newState = game.applyMove(gamestate, move);
-              setGamestate(newState)
-              setMood(strat.mood)
-              setLastMove(move)
-          }}
-      >
-          step AI {t ? `(${t.toFixed(2)} ms)` : ''}
-      </button>
 
       <button
-          disabled={status!==GameStatus.IN_PLAY || gamestate.activePlayer === 2 || !game.getValidMoves(gamestate).find(m=>m.type==="end")}
+          disabled={status!==GameStatus.IN_PLAY || combinedGameState.state.activePlayer === 2 || !game.getValidMoves(combinedGameState.state).find(m=>m.type==="end")}
           onClick={()=>{
               const move:CardGameMove = {type:"end"}
-              const newState = game.applyMove(gamestate, move);
-              setGamestate(newState)
-              setLastMove(move)
+              const newState = game.applyMove(combinedGameState.state, move);
+            setCombinedGameState({
+                state:newState,
+                lastMove: move
+            })
           }}
       >
          End Turn
       </button>
+
         <div>
             {mood}
         </div>
+        {isLoading && 'loading'}
     </div>
   );
 }

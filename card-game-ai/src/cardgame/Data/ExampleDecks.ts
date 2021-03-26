@@ -24,7 +24,7 @@ export default function():Record<number, Card>{
     if(Object.values(TextTemplate.templates).some(arr=>arr.length > 0)) {
         return [...cardText, ...cardText, ...cardText].map((text, i) => {
             const effect = TextTemplate.parse('Eff', text);
-            return new EffectCard(effect, text, `#${i}`);
+            return new EffectCard(effect, text, `Card ${i}`);
         })
     }
     throw new Error("Text Templates not setup")

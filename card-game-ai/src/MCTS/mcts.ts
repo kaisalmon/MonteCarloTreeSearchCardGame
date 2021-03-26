@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import promptSync from 'prompt-sync'
+import objectHash from 'object-hash'
 const prompt = promptSync();
 
 export enum GameStatus{
@@ -78,12 +79,14 @@ export class GreedyStrategy<STATE extends GameState, T> extends RandomStrategy<S
 
 export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, T>{
     mood = "waiting..."
-    simulationStrategy: Strategy<STATE, T>;
-    samples:number;
-    depth:number;
-    inPlayHeuristic:(state:STATE)=>number;
+    private simulationStrategy: Strategy<STATE, T>;
+    private samples:number;
+    private depth:number;
+    private inPlayHeuristic:(state:STATE)=>number;
 
     pruningThreshold?:number=undefined;
+    useCache:boolean=false;
+    private cache:Record<string,T> = {};
 
     constructor(samples=60, depth=100, inPlayHeuristic: (state:STATE)=>number = ()=>0, simulationStrategy:Strategy<STATE, T> = new RandomStrategy()) {
         this.simulationStrategy = simulationStrategy;
@@ -93,6 +96,14 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
     }
 
     pickMove(game:Game<STATE, T>, state: STATE): T {
+        if(!this.useCache)return this.performPickMove(game, state);
+        const hash = objectHash(state);
+        if(!this.cache[hash]){
+            this.cache[hash] = this.performPickMove(game, state);
+        }
+        return this.cache[hash];
+    }
+    performPickMove(game:Game<STATE, T>, state: STATE): T {
         let evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, depth: 0,unfinished:0}));
         if(evaluations.length === 0) throw new Error('No valid moves')
         const playerGoal = getPlayerGoal(state.activePlayer);

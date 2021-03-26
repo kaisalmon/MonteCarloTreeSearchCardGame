@@ -40,7 +40,7 @@ const CardPile:React.FunctionComponent<CardPileProps> = props=>{
 
     return <>
             <div style={PILE_STYLE} ref={setTriggerRef}>
-                {props.label}
+                {label}
                 <div>{cards.length}</div>
             </div>
          {visible && (
@@ -50,7 +50,7 @@ const CardPile:React.FunctionComponent<CardPileProps> = props=>{
           >
               {cards.length===0 && <i>Empty</i>}
               <ul style={CARD_LIST_STYLE}>
-                  {cards.map(card=><li>
+                  {cards.map((card, i)=><li key={i}>
                       <b>{typeof card === 'string' ? card : card.getName()}</b>
                       {' '}
                         {typeof card !== 'string' && card.getText()}

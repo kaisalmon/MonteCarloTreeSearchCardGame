@@ -5,19 +5,20 @@ import {GameStatus, MCTSStrategy, MoveFromGame, RandomStrategy, StateFromGame, S
 import {performance} from 'perf_hooks';
 import setupEffects from '../cardgame/Components/setup'
 import CardGame, {CardGameState} from "../cardgame/CardGame";
+import {ConnectFourGame} from "./ConnectFour";
 
 
 
 export function main(){
 
-
-
     setupEffects();
     const cardIndex:Record<number, Card> = loadExampleDeck();
-    const game = new CardGame(cardIndex)
+    const game = new ConnectFourGame()
 
-    const blueStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new RandomStrategy()
-    const redStrat:MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(320,1000, game.getHeuristic)
+    const blueStrat:MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> =new MCTSStrategy(320,1000)
+    const redStrat:MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(320,1000)
+
+    redStrat.useCache = true;
 
     const wins:Record<GameStatus, number> = {
         [GameStatus.WIN]: 0,
@@ -33,12 +34,9 @@ export function main(){
     for(let i = 0; i < 150; i++) {
         const max_len = 300;
         let moves = 0;
-        let state = game.newGame()
-        if(Math.random() > 0.5) {
-            state = {
-                ...state,
-                activePlayer: 2
-            }
+        let state:StateFromGame<typeof game> = {
+            ...game.newGame(),
+            activePlayer: Math.random() > 0.5 ? 1 : 2
         }
         try {
             while (game.getStatus(state) === GameStatus.IN_PLAY && moves++ < max_len) {
