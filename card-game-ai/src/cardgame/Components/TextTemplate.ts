@@ -44,6 +44,7 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]=
   constructor(slot: GetSlot<T>, template:string, factory:(...args:ARGS)=>T){
     this.template = template;
     const pattern = template
+        .toLowerCase()
         .replace(/%\w+\s+/g, '(.*\\s+|)?')
         .replace(/%\w+/g, '(.*|)?')
     this.regex = new RegExp('^'+pattern+'$');

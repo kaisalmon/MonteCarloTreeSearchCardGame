@@ -2,7 +2,7 @@ import TextTemplate, {Effect, ExecutionContext, PlayerTarget, Resolver} from "..
 import {CardGamePlayerState, CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 
-class PlayerLessThanCondition implements Resolver<boolean>{
+export class PlayerLessThanCondition implements Resolver<boolean>{
     target:PlayerTarget
     n:number
     mapping:(target:CardGamePlayerState)=>number
@@ -22,12 +22,12 @@ class PlayerLessThanCondition implements Resolver<boolean>{
 export default function setup(){
     new TextTemplate(
         'Cond',
-        '%Player (?:has|have) less than %N cards in (?:their|your) hand',
+        '%Player\\s?(?:has|have) less than %N cards in (?:their|your) hand',
         (target:PlayerTarget, n:number) => new PlayerLessThanCondition(target, n, player=>player.hand.length)
     );
     new TextTemplate(
         'Cond',
-        '%Player(?:has|have) less than %N health',
+        '%Player\\s?(?:has|have) less than %N health',
         (target:PlayerTarget, n:number) => new PlayerLessThanCondition(target, n, player=>player.health)
     );
 }

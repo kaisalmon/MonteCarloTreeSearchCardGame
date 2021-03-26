@@ -86,7 +86,7 @@ export class ConnectFourGame implements Game<ConnectFourState, ConnectFourMove> 
 
     newGame(): ConnectFourState {
         return {
-            activePlayer: 1,
+            activePlayer: Math.random() > 0.5 ? 1 : 2,
             rows:[
                 [],
                 [],

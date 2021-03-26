@@ -83,6 +83,8 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
     depth:number;
     inPlayHeuristic:(state:STATE)=>number;
 
+    pruningThreshold?:number=undefined;
+
     constructor(samples=60, depth=100, inPlayHeuristic: (state:STATE)=>number = ()=>0, simulationStrategy:Strategy<STATE, T> = new RandomStrategy()) {
         this.simulationStrategy = simulationStrategy;
         this.depth = depth;
@@ -91,10 +93,11 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
     }
 
     pickMove(game:Game<STATE, T>, state: STATE): T {
-        const evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, depth: 0,unfinished:0}));
+        let evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, depth: 0,unfinished:0}));
         if(evaluations.length === 0) throw new Error('No valid moves')
         const playerGoal = getPlayerGoal(state.activePlayer);
-        for(let i = 0; i < this.samples; i++){
+        const iterations = Math.ceil(this.samples/evaluations.length);
+        for(let i = 0; i < iterations; i++){
             evaluations.forEach(evaluation=>{
                 const stateWithScrambledUnknowns = game.randomizeHiddenInfo(state);
                 const newState = game.applyMove(stateWithScrambledUnknowns, evaluation.move);
@@ -111,6 +114,19 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
                 }
                 evaluation.depth += simulation.length;
             })
+            if(this.pruningThreshold !== undefined && i % 10 == 9){
+                 const highestEval =  _.maxBy(evaluations, 'score')!;
+                 const highestScore = (highestEval.score / highestEval.outOf)/2 + 0.5; //Rescaled to 0 - 1
+                 const maxDifference = this.pruningThreshold * 1/Math.pow(i,0.3);
+                 evaluations = evaluations.filter(evaluation=> {
+                    const score = (evaluation.score/evaluation.outOf)/2 + 0.5; //Rescaled to 0 - 1
+                    const difference = highestScore - score;
+                    return difference <= maxDifference;
+                 });
+            }
+            if(evaluations.length === 1){
+                break;
+            }
         }
         const highestEval =  _.maxBy(evaluations, 'score')!;
         const highestScore = highestEval.score / highestEval.outOf

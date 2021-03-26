@@ -2,7 +2,7 @@ import TextTemplate, {Effect, ExecutionContext, PlayerTarget} from "../TextTempl
 import {CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 
-class ChangeHealthEffect implements Effect{
+export class ChangeHealthEffect implements Effect{
     target:PlayerTarget
     amount:number;
     constructor(target:PlayerTarget, amount:number) {

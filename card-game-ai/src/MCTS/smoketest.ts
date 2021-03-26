@@ -1,16 +1,23 @@
 import {Card} from "../cardgame/Card";
 import loadExampleDeck from "../cardgame/Data/ExampleDecks";
 import _ from "lodash";
-import CardGame from "../cardgame/CardGame";
 import {GameStatus, MCTSStrategy, MoveFromGame, RandomStrategy, StateFromGame, Strategy} from "./mcts";
+import {performance} from 'perf_hooks';
+import setupEffects from '../cardgame/Components/setup'
+import CardGame, {CardGameState} from "../cardgame/CardGame";
+
+
 
 export function main(){
+
+
+
+    setupEffects();
     const cardIndex:Record<number, Card> = loadExampleDeck();
-    const deck = _.flatMap([1,2,3,4].map(()=>Object.keys(cardIndex).map(n=>parseInt(n))));
-    const game = new CardGame(cardIndex, deck);
-    const greedyStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(1,1,(gs)=>game.getHeuristic(gs));
-    const redStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(25,25,(gs)=>game.getHeuristic(gs))
-    const blueStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(25,25,(gs)=>game.getHeuristic(gs), greedyStrat)
+    const game = new CardGame(cardIndex)
+
+    const blueStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new RandomStrategy()
+    const redStrat:MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(320,1000, game.getHeuristic)
 
     const wins:Record<GameStatus, number> = {
         [GameStatus.WIN]: 0,
@@ -19,32 +26,36 @@ export function main(){
         [GameStatus.IN_PLAY]: 0,
     };
     const ends = {
-        'no_health':0,
-        'no_deck':0,
+        "blue_t":0,
+        "red_t":0,
     };
-    for(let i = 0; i < 300; i++) {
+
+    for(let i = 0; i < 150; i++) {
         const max_len = 300;
         let moves = 0;
         let state = game.newGame()
+        if(Math.random() > 0.5) {
+            state = {
+                ...state,
+                activePlayer: 2
+            }
+        }
         try {
             while (game.getStatus(state) === GameStatus.IN_PLAY && moves++ < max_len) {
                 const activeStrat = state.activePlayer === 1 ? blueStrat : redStrat;
+                const start = performance.now();
                 const move = activeStrat.pickMove(game, state);
+                const t = performance.now() - start;
+                ends[state.activePlayer === 1? 'blue_t' : 'red_t']+= t;
                 state = game.applyMove(state, move);
                 /*
                 console.log(activeStrat.mood)
                 game.print(state)
-
                  */
             }
             const status = game.getStatus(state);
             wins[status] += 1
-            if(state.playerOne.deck.length === 0 || state.playerTwo.deck.length===0){
-                ends.no_deck++;
-            }
-            if(state.playerOne.health <= 0 || state.playerTwo.health <= 0){
-                ends.no_health++;
-            }
+
         } catch (e) {
             wins[GameStatus.IN_PLAY] += 1
             console.error(e)
@@ -54,7 +65,8 @@ export function main(){
             }
         }
         //game.print(state)
-        console.log({...wins, ...ends})
+        const endsAvg = _.mapValues(ends, v=>(v/(i+1)).toFixed(3))
+        console.log({...wins, ...endsAvg})
     }
 }
 main();

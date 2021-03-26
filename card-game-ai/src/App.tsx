@@ -5,6 +5,7 @@ import loadExampleDeck from "./cardgame/Data/ExampleDecks";
 import CardGame, {CardGameMove, CardGameState} from "./cardgame/CardGame";
 import {GameStatus, MCTSStrategy, MoveFromGame, RandomStrategy, StateFromGame, Strategy} from "./MCTS/mcts";
 import GameBoard from "./client/GameBoard";
+import setupEffects from "./cardgame/Components/setup";
 
 function getMoveFromCardClick(gamestate:CardGameState, cardNumber:number):CardGameMove{
     if(gamestate.step=='draw')return {type:'discard', cardNumber}
@@ -12,12 +13,13 @@ function getMoveFromCardClick(gamestate:CardGameState, cardNumber:number):CardGa
 }
 
 function App() {
+     setupEffects();
   const cardIndex:Record<number, Card> = useMemo(()=>loadExampleDeck(), []);
   const deck = useMemo(()=>Object.keys(cardIndex).map(n=>parseInt(n)), [cardIndex]);
   const game = useMemo(()=>new CardGame(cardIndex, deck), [cardIndex, deck]);
   const playerStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new RandomStrategy()
   const greedyStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(1,1,(gs)=>game.getHeuristic(gs));
-  const opponentStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(45,45,(gs)=>game.getHeuristic(gs), greedyStrat)
+  const opponentStrat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(2500,200, game.getHeuristic)
   const [gamestate, setGamestate] = React.useState(game.newGame());
   const status = useMemo(()=>game.getStatus(gamestate),[game, gamestate])
 

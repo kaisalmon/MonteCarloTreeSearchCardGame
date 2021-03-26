@@ -1,9 +1,16 @@
 import {describe, it, before} from 'mocha'
 
-import setupEffects from '../cardgame/Components/setup'
+import setupEffects, {
+    resolveActivePlayer,
+    resolveOpponent,
+    resolvePlayerContextually
+} from '../cardgame/Components/setup'
 import assert from 'assert';
 import TextTemplate, {Effect} from "../cardgame/Components/TextTemplate";
 import {CardGameState} from "../cardgame/CardGame";
+import {ConditionalEffect} from "../cardgame/Components/Effects/ConditionalEffect";
+import {PlayerLessThanCondition} from "../cardgame/Components/GameConditions/PlayerLessThanCondition";
+import {ChangeHealthEffect} from "../cardgame/Components/Effects/ChangeHealthEffect";
 
 const EXAMPLE_STATE:CardGameState = {
       activePlayer: 1,
@@ -30,7 +37,7 @@ describe("Text Template", ()=>{
     before(()=>{
         setupEffects();
     })
-    after(()=>{
+    after(()=>{80
         TextTemplate.clear();
     })
     it("TextTemplates has templates", ()=>{
@@ -51,6 +58,16 @@ describe("Text Template", ()=>{
         assert.equal(effect.constructor.name, 'ListEffect')
         assert.equal((effect as any).a.constructor.name, 'ChangeHealthEffect')
         assert.equal((effect as any).b.constructor.name, 'ChangeHealthEffect')
+    });
+    it("Can parse 'Deal three damage to your opponent if they have less than ten health'", ()=>{
+        const effect:Effect = TextTemplate.parse('Eff', 'Deal three damage to your opponent if they have less than ten health');
+        assert.equal(effect.constructor.name, 'ConditionalEffect')
+        assert.equal((effect as ConditionalEffect).eff.constructor.name, 'ChangeHealthEffect')
+    });
+        it("Can parse 'If you have less than two cards in your hand, draw two cards'", ()=>{
+        const effect:Effect = TextTemplate.parse('Eff', 'If you have less than two cards in your hand, draw two cards',);
+        assert.equal(effect.constructor.name, 'ConditionalEffect')
+        assert.equal((effect as ConditionalEffect).eff.constructor.name, 'DrawCardEffect')
     });
     it("Can parse 'Your opponent draws a card'", ()=>{
         const effect:Effect = TextTemplate.parse('Eff', 'Your opponent draws a card')
@@ -83,18 +100,52 @@ describe("Text Template", ()=>{
         const state = effect.applyEffect(EXAMPLE_STATE, {playerKey: "playerOne"});
         assert.equal(state.playerOne.health, 10);
     });
-        it("Can Exec 'gain 4 health if you have less than 5 health', when the players has less than 5 health", ()=>{
+    it("Can Exec 'gain 4 health if you have less than 5 health', when the players has less than 5 health", ()=>{
             const stateWithLessThan5Health = {
                 ...EXAMPLE_STATE,
                 playerOne:{
                     ...EXAMPLE_STATE.playerOne,
-                    health: 1
+                    health: 3
                 }
             }
         const effect:Effect = TextTemplate.parse('Eff', 'gain 4 health if you have less than 5 health');
         const state = effect.applyEffect(stateWithLessThan5Health, {playerKey: "playerOne"});
-        assert.equal(state.playerOne.health, 5);
+        assert.equal(state.playerOne.health, 7);
     });
+    describe('"Deal three damage to your opponent if they have less than ten health"', ()=>{
+        let effect:null|Effect = null;
+        before(()=>{
+            effect = TextTemplate.parse("Eff", "Deal three damage to your opponent if they have less than ten health")
+        })
+        it("Parses correctly", ()=>{
+            if(!effect) return assert.fail("Effect null")
+            assert.strictEqual(effect.constructor.name, 'ConditionalEffect')
+            assert.strictEqual((effect as ConditionalEffect).eff.constructor.name, 'ChangeHealthEffect')
+            assert.strictEqual(((effect as ConditionalEffect).eff as ChangeHealthEffect).target, resolvePlayerContextually)
+            assert.strictEqual((effect as ConditionalEffect).condition.constructor.name, 'PlayerLessThanCondition')
+            assert.strictEqual(((effect as ConditionalEffect).condition as PlayerLessThanCondition).target, resolveOpponent)
+        })
+        it("Executes when condition false", ()=>{
+            if(!effect) return assert.fail("Effect null")
+            const state:CardGameState = {...EXAMPLE_STATE}
+            const result = effect.applyEffect(state,{playerKey:'playerOne'})
+            assert.strictEqual(result.playerOne.health, 10)
+            assert.strictEqual(result.playerTwo.health, 10)
+        })
+        it("Executes when condition true", ()=>{
+            if(!effect) return assert.fail("Effect null")
+            const state:CardGameState = {
+                ...EXAMPLE_STATE,
+                playerTwo:{
+                    ...EXAMPLE_STATE.playerTwo,
+                    health: 5
+                }
+            }
+            const result = effect.applyEffect(state,{playerKey:'playerOne'})
+            assert.strictEqual(result.playerOne.health, 10)
+            assert.strictEqual(result.playerTwo.health, 2)
+        })
+    })
     describe("Error Handling", ()=>{
         it("Response with the correct error message", ()=>{
             assert.throws(()=>TextTemplate.parse("Eff", "Deal three damage to fred"), err=>{

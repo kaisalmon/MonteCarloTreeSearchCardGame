@@ -7,6 +7,14 @@ import TextTemplate, {PlayerTarget} from "./TextTemplate";
 import {PlayerKey} from "../Card";
 import numberToWords from 'number-to-words';
 
+export interface HasTarget{
+    target: PlayerTarget;
+}
+
+export function hasTarget(x:any):x is HasTarget{
+    return x.hasOwnProperty("target");
+}
+
 export const resolveActivePlayer:PlayerTarget = {
     resolveValue(_, ctx):PlayerKey {
         ctx.lastPlayer = ctx.playerKey;
@@ -20,7 +28,7 @@ export const resolveOpponent:PlayerTarget = {
         return target;
     }
 }
-const resolvePlayerContextually:PlayerTarget = {
+export const resolvePlayerContextually:PlayerTarget = {
     resolveValue(_, ctx):PlayerKey {
         return ctx.lastPlayer || ctx.playerKey
     }

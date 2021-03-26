@@ -1,6 +1,10 @@
 import {Game, GameStatus} from "../MCTS/mcts";
 import chalk from 'chalk'
-import {Card} from "./Card";
+import {Card, EffectCard} from "./Card";
+import {DrawCardEffect} from "./Components/Effects/RandomTransferEffect";
+import {resolveActivePlayer} from "./Components/setup";
+import {Fizzle} from "./Components/TextTemplate";
+import {ConditionalEffect} from "./Components/Effects/ConditionalEffect";
 
 export interface CardGamePlayerState {
     readonly health: number;
@@ -23,13 +27,13 @@ interface CardGameDiscardCardMove{type:"discard"; cardNumber:number}
 interface CardGameEndMove {type:"end"}
 export type CardGameMove = CardGameEndMove | CardGamePlayCardMove | CardGameDiscardCardMove;
 
-const HAND_SIZE = 6;
 
 export default class CardGame implements Game<CardGameState, CardGameMove>{
 
     cardIndex:Record<number, Card>;
     deckOne:number[];
     deckTwo:number[];
+    static MAX_HAND_SIZE: number = 6;
 
     constructor(cardIndex:Record<number,Card>, deckOne?:number[], deckTwo?:number[]){
         this.cardIndex = cardIndex;
@@ -49,12 +53,20 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     }
 
     getSensibleMoves(state: CardGameState): CardGameMove[] {
-        return [];
+        return this.getCardMoves(state).filter(({cardNumber})=>{
+            const {effect} = (this.cardIndex[cardNumber] as EffectCard)
+            if(effect.constructor.name !== "ConditionalEffect") {
+                return true;
+            }
+            const {condition} = (effect as ConditionalEffect)
+            const playerKey = state.activePlayer === 1 ? 'playerOne' : 'playerTwo';
+            return condition.resolveValue(state,{playerKey})
+        });
     }
 
     getStatus(state: CardGameState): GameStatus {
-        const p1Dead = state.playerOne.deck.length === 0 ||  state.playerOne.health <= 0;
-        const p2Dead = state.playerTwo.deck.length === 0 ||  state.playerTwo.health <= 0;
+        const p1Dead =  state.playerOne.health <= 0;
+        const p2Dead =  state.playerTwo.health <= 0;
         if(p1Dead && p2Dead) return GameStatus.DRAW;
         if(p1Dead) return GameStatus.LOSE;
         if(p2Dead) return GameStatus.WIN;
@@ -71,13 +83,13 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     newGame(): CardGameState {
         const newPlayer = {
             hand:[],
-            health: 30,
+            health: 25,
             discardPile:[],
             board:[]
         }
         const preGame:CardGameState = {
-            activePlayer: 2, //Will flip when we run end turn logic
-            step: 'play', // Will also flip
+            activePlayer: 1,
+            step: 'play',
             playerOne:{
                 deck: this.deckOne,
                 ...newPlayer
@@ -87,7 +99,9 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
                 ...newPlayer
             }
         };
-        return this.applyEndMove(preGame);
+        const drawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.MAX_HAND_SIZE);
+        const p1Draw =  drawCardsEffect.applyEffect(preGame,{playerKey: "playerOne"});
+        return drawCardsEffect.applyEffect(p1Draw,{playerKey: "playerTwo"});
     }
 
     print( {playerOne, playerTwo, ...state}: CardGameState): void {
@@ -127,31 +141,20 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     }
 
     private applyEndMove(state: CardGameState):CardGameState {
-        const DRAW_UP_TO = 7;
-
         const activePlayer = state.activePlayer === 1 ? 2 : 1;
         const playerKey = activePlayer  === 1 ? 'playerOne' : 'playerTwo';
-        const player = state[playerKey];
-
-        const deck = [...player.deck];
-        const hand = [...player.hand];
-
-        while(hand.length < DRAW_UP_TO && deck.length > 0){
-            const drawIndex = Math.floor(Math.random() * deck.length);
-            hand.push(...deck.splice(drawIndex, 1))
-        }
-
-        const newPlayer:CardGamePlayerState = {
-            ...player,
-            deck,
-            hand
-        }
-
-        return {
+        const newState:CardGameState =  {
             ...state,
-            step: 'draw',
-            [playerKey]: newPlayer,
+            step: 'play',
             activePlayer,
+        }
+        try{
+            return new DrawCardEffect(resolveActivePlayer, 1).applyEffect(newState,{playerKey})
+        }catch(e){
+            if(Fizzle.isFizzle(e)){
+                return e.returnState
+            }
+            throw e;
         }
     }
 
@@ -168,7 +171,7 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
         discardPile.push(...hand.splice(hand.indexOf(cardNumber), 1))
         return {
             ...state,
-            step: hand.length > HAND_SIZE ? 'draw' :'play',
+            step: hand.length > CardGame.MAX_HAND_SIZE ? 'draw' :'play',
             [playerKey]:{
                 ...player,
                 hand,
@@ -178,8 +181,8 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     }
 
     getHeuristic(state: CardGameState):number {
-        const bluePoints = Math.max(0, state.playerOne.health * Math.pow(state.playerOne.deck.length,3))
-        const redPoints = Math.max(0, state.playerTwo.health * Math.pow(state.playerTwo.deck.length,3))
+        const bluePoints = Math.max(0, state.playerOne.health * state.playerOne.deck.length * (1+state.playerOne.hand.length))
+        const redPoints = Math.max(0, state.playerTwo.health* state.playerTwo.deck.length * (1+state.playerTwo.hand.length))
         if(bluePoints === redPoints) return 0;
         return (bluePoints-redPoints)/(redPoints+bluePoints)
     }
