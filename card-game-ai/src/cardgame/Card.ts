@@ -1,12 +1,12 @@
-import {CardGameState} from "./CardGame";
-import {Effect, Fizzle} from "./Components/TextTemplate";
+import CardGame, {CardGameState} from "./CardGame";
+import {Ability, Effect, Fizzle} from "./Components/TextTemplate";
 
 export type PlayerKey = 'playerOne'|'playerTwo'
 
 export abstract class Card{
     abstract getName():string;
     abstract getText():string;
-    abstract applyEffect(state:CardGameState, playerKey:PlayerKey):CardGameState;
+    abstract applyEffect(state:CardGameState, playerKey:PlayerKey, game:CardGame):CardGameState;
 
     private preEffect(state:CardGameState, cardNumber:number, playerKey:PlayerKey):CardGameState{
         const player = state[playerKey];
@@ -31,11 +31,11 @@ export abstract class Card{
         }
     }
 
-    play(state:CardGameState, cardNumber:number):CardGameState{
+    play(state:CardGameState, cardNumber:number, game:CardGame):CardGameState{
         const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
         try{
             const afterPreEffect = this.preEffect(state,cardNumber,playerKey);
-            const afterEffect = this.applyEffect(afterPreEffect, playerKey);
+            const afterEffect = this.applyEffect(afterPreEffect, playerKey, game);
             return this.postEffect(afterEffect,cardNumber,playerKey);
         }catch(e){
             if(!Fizzle.isFizzle(e)) throw e;
@@ -61,15 +61,32 @@ export class EffectCard extends Card{
         this.text = text;
         this.name = name;
     }
-    applyEffect(state: CardGameState, playerKey:PlayerKey): CardGameState {
+    applyEffect(state: CardGameState, playerKey:PlayerKey, game:CardGame): CardGameState {
         const ctx = {
             playerKey
         }
-        return this.effect.applyEffect(state, ctx)
+        return this.effect.applyEffect(state, ctx, game)
     }
 }
 
-export abstract class ItemCard extends Card{
+export class ItemCard extends Card{
+    ability: Ability;
+    name: string;
+    text: string;
+    getName(): string {
+        return this.name;
+    }
+
+    getText(): string {
+        return this.text;
+    }
+    constructor(ability:Ability, text:string, name:string) {
+        super();
+        this.ability = ability;
+        this.text = text;
+        this.name = name;
+    }
+
     applyEffect(state: CardGameState): CardGameState {
         return state;
     }
@@ -83,6 +100,8 @@ export abstract class ItemCard extends Card{
             }
         }
     }
-    abstract getName():string;
-    abstract getText():string;
+
+    static isItemCard(c:Card):c is ItemCard{
+        return (c as Object).hasOwnProperty('ability')
+    }
 }

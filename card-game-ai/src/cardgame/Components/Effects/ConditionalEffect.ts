@@ -1,5 +1,5 @@
 import TextTemplate, {Effect, ExecutionContext, PlayerTarget, Resolver} from "../TextTemplate";
-import {CardGameState} from "../../CardGame";
+import CardGame, {CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 import {hasTarget, resolvePlayerContextually} from "../setup";
 
@@ -10,9 +10,9 @@ export class ConditionalEffect implements Effect{
         this.eff = eff;
         this.condition = condition;
     }
-    applyEffect(state: CardGameState, ctx:ExecutionContext): CardGameState {
+    applyEffect(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
         if(this.condition.resolveValue(state, ctx)){
-            return this.eff.applyEffect(state, ctx);
+            return this.eff.applyEffect(state, ctx, game);
         }
         return state;
     }

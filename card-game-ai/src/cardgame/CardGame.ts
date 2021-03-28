@@ -1,10 +1,11 @@
 import {Game, GameStatus} from "../MCTS/mcts";
 import chalk from 'chalk'
-import {Card, EffectCard} from "./Card";
+import {Card, EffectCard, ItemCard, PlayerKey} from "./Card";
 import {DrawCardEffect} from "./Components/Effects/RandomTransferEffect";
 import {resolveActivePlayer} from "./Components/setup";
 import {Fizzle} from "./Components/TextTemplate";
 import {ConditionalEffect} from "./Components/Effects/ConditionalEffect";
+import {EventParams, EventType, OnEventAbility} from "./Components/Abilities/OnEventAbility";
 
 export interface CardGamePlayerState {
     readonly health: number;
@@ -55,7 +56,7 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     getSensibleMoves(state: CardGameState): CardGameMove[] {
         return this.getCardMoves(state).filter(({cardNumber})=>{
             const {effect} = (this.cardIndex[cardNumber] as EffectCard)
-            if(effect.constructor.name !== "ConditionalEffect") {
+            if(effect?.constructor.name !== "ConditionalEffect") {
                 return true;
             }
             const {condition} = (effect as ConditionalEffect)
@@ -100,8 +101,8 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
             }
         };
         const drawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.MAX_HAND_SIZE);
-        const p1Draw =  drawCardsEffect.applyEffect(preGame,{playerKey: "playerOne"});
-        return drawCardsEffect.applyEffect(p1Draw,{playerKey: "playerTwo"});
+        const p1Draw =  drawCardsEffect.applyEffect(preGame,{playerKey: "playerOne"}, this);
+        return drawCardsEffect.applyEffect(p1Draw,{playerKey: "playerTwo"}, this);
     }
 
     print( {playerOne, playerTwo, ...state}: CardGameState): void {
@@ -148,8 +149,9 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
             step: 'play',
             activePlayer,
         }
+        const postEventsState = this.processEvent(newState, 'turn_start',{player:playerKey})
         try{
-            return new DrawCardEffect(resolveActivePlayer, 1).applyEffect(newState,{playerKey})
+            return new DrawCardEffect(resolveActivePlayer, 1).applyEffect(postEventsState,{playerKey}, this)
         }catch(e){
             if(Fizzle.isFizzle(e)){
                 return e.returnState
@@ -160,7 +162,7 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
 
     private applyCardPlay(state: CardGameState, cardNumber: number):CardGameState {
         const card = this.cardIndex[cardNumber];
-        return card.play(state, cardNumber)
+        return card.play(state, cardNumber, this)
     }
     private applyCardDiscard(state: CardGameState, cardNumber: number):CardGameState {
         const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
@@ -185,5 +187,33 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
         const redPoints = Math.max(0, state.playerTwo.health* state.playerTwo.deck.length * (1+state.playerTwo.hand.length))
         if(bluePoints === redPoints) return 0;
         return (bluePoints-redPoints)/(redPoints+bluePoints)
+    }
+
+
+    processEvent<E extends EventType>(baseState:CardGameState, eventType:E, eventParams: EventParams<E>):CardGameState{
+        if(this.getStatus(baseState) != GameStatus.IN_PLAY) return baseState
+
+        let state = baseState;
+        const playerKeys:PlayerKey[] = ['playerOne', 'playerTwo'];
+        playerKeys.forEach((playerKey:PlayerKey)=>{
+            const itemCardsInPlay = baseState[playerKey].board
+                .map(n=>this.cardIndex[n])
+                .filter(c=>ItemCard.isItemCard(c)) as ItemCard[]
+
+            const listeners = itemCardsInPlay
+                .map(c=>c.ability)
+                .filter(a=>OnEventAbility.isOnEventAbility(a, eventType)) as OnEventAbility<E>[]
+
+            listeners.forEach(listener=>{
+                try{
+                    state = listener.trigger(state, eventParams, {playerKey}, this);
+                }catch(e){
+                    if(!Fizzle.isFizzle(e)) throw e;
+                    state = e.returnState;
+                }
+            })
+        })
+
+        return state;
     }
 }

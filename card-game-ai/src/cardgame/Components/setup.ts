@@ -3,6 +3,7 @@ import setupDraw from './Effects/RandomTransferEffect';
 import setupDamage from './Effects/ChangeHealthEffect';
 import setupConditional from './Effects/ConditionalEffect'
 import setupLessThan from './GameConditions/PlayerLessThanCondition'
+import {setup as setupEventAbilities} from './Abilities/OnEventAbility'
 import TextTemplate, {PlayerTarget} from "./TextTemplate";
 import {PlayerKey} from "../Card";
 import numberToWords from 'number-to-words';
@@ -47,10 +48,12 @@ export default function () {
     new TextTemplate('Player','the other player',()=>resolveOpponent)
     new TextTemplate('Player','they',()=>resolvePlayerContextually)
     new TextTemplate('Player','them',()=>resolvePlayerContextually)
+    new TextTemplate('Player','that player',()=>resolvePlayerContextually)
     new TextTemplate('Player','',()=>resolvePlayerContextually)
     setupList();
     setupDraw();
     setupDamage();
     setupConditional();
     setupLessThan();
+    setupEventAbilities();
 }

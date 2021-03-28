@@ -16,6 +16,7 @@
     "@types/prompt-sync": "^4.1.0",
     "@types/react": "^17.0.3",
     "@types/react-dom": "^17.0.0",
+    "@types/sinon": "^9.0.11",
     "assert": "^2.0.0",
     "chalk": "^4.1.0",
     "delay": "^5.0.0",
@@ -32,6 +33,7 @@
     "react-scripts": "^4.0.3",
     "react-shuffle": "^2.1.0",
     "react-worker": "^1.0.0",
+    "sinon": "^10.0.0",
     "ts-mocha": "^8.0.0",
     "typescript": "^4.1.2",
     "web-vitals": "^1.0.1"
@@ -41,7 +43,7 @@
     "build": "react-scripts build && mv ./build ../docs",
     "test": "ts-mocha -p ./tsconfig.json src/**/*.spec.ts",
     "eject": "react-scripts eject",
-    "smoke": "npx ts-node -O {\\\\\"module\\\\\":\\\\\"commonjs\\\\\"} src/MCTS/smoketest.ts"
+    "smoke": "npx ts-node -O {\\\\\\\\\\\\\\\\\\\\\\\"module\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\"commonjs\\\\\\\\\\\\\\\\\\\\\\\"} src/MCTS/tornament.ts"
   },
   "eslintConfig": {
     "extends": [

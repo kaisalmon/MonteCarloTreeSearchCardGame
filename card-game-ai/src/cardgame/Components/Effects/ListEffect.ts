@@ -1,5 +1,5 @@
 import TextTemplate, {Effect, ExecutionContext} from "../TextTemplate";
-import {CardGameState} from "../../CardGame";
+import CardGame, {CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 
 class ListEffect implements Effect{
@@ -9,9 +9,9 @@ class ListEffect implements Effect{
         this.a = a;
         this.b = b;
     }
-    applyEffect(state: CardGameState, ctx:ExecutionContext): CardGameState {
-        const afterA = this.a.applyEffect(state, ctx);
-        return this.b.applyEffect(afterA, ctx);
+    applyEffect(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
+        const afterA = this.a.applyEffect(state, ctx, game);
+        return this.b.applyEffect(afterA, ctx, game);
     }
 }
 

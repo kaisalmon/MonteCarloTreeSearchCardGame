@@ -9,6 +9,7 @@ type CardProps = {
     canBeDiscarded:boolean;
     canBePlayed:boolean;
     isHidden:boolean;
+    onBoard:boolean;
 }
 
 const CARD_STYLE:CSSProperties ={
@@ -71,10 +72,31 @@ const HIDDEN_STYLING = {
     transform: 'rotate3d(0,1,0,0.5turn)'
 }
 
+const VANISHED_STYLE = {
+    transform: 'scale(0)'
+}
+
 const CardDisplay:FunctionComponent<CardProps> = (props)=>{
+    const [hasAppearedOnBoard, setHasAppearedOnBoard] = React.useState(props.onBoard && !props.beingPlayed)
+    React.useEffect(()=>{
+        if(props.onBoard && props.beingPlayed){
+            const n = setTimeout(()=>{
+                setHasAppearedOnBoard(true)
+            }, 800)
+            return ()=>window.clearTimeout(n)
+        }else if(props.onBoard && !props.beingPlayed){
+            const n = setTimeout(()=>{
+                setHasAppearedOnBoard(false)
+            }, 800)
+            return ()=>window.clearTimeout(n)
+        }
+    })
+
+
     const {card, beingPlayed} = props;
     const situationalStyle = props.canBeDiscarded ? CAN_BE_DISCADED_STYLE :
                             props.canBePlayed ? CAN_BE_PLAYED_STYLE :
+                            hasAppearedOnBoard ? VANISHED_STYLE :
                                 {};
     const positionStyling = (props.beingPlayed && props.isOpponent) ? MOVE_DOWN_STYLE :
                             (props.beingPlayed && !props.isOpponent) ? MOVE_UP_STYLE :

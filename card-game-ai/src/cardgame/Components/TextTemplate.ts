@@ -1,11 +1,13 @@
-import {CardGameState} from "../CardGame";
+import CardGame, {CardGameState} from "../CardGame";
 import {Card, PlayerKey} from "../Card";
 import _ from 'lodash'
+import {EventParams, EventType} from "./Abilities/OnEventAbility";
 
 type Component = ResolveSlot<any>
 type GetSlot<T extends Component> = T extends ResolveSlot<infer R> ? R : any;
-type Slot = 'Eff'|'Player'|'N'|'Cond'
+type Slot = 'Eff'|'Player'|'N'|'Cond'|'Ability'
 type ResolveSlot<SLOT extends Slot> = SLOT extends 'Eff' ? Effect
+                                    : SLOT extends 'Ability' ? Ability
                                     : SLOT extends 'Player' ? PlayerTarget
                                     : SLOT extends 'Cond' ? Resolver<boolean>
                                     : SLOT extends 'N' ? number
@@ -14,6 +16,11 @@ type ResolveSlot<SLOT extends Slot> = SLOT extends 'Eff' ? Effect
 export type ExecutionContext = {
   playerKey: PlayerKey
   lastPlayer?: PlayerKey;
+} & (EventContext<EventType> | {})
+
+type EventContext<E extends EventType> = {
+    eventType: E,
+    eventParams:EventParams<E>
 }
 
 export type Resolver<T> = {
@@ -22,8 +29,12 @@ export type Resolver<T> = {
 
 export type PlayerTarget = Resolver<PlayerKey>
 
+export interface Ability {
+  abilityType: string;
+}
+
 export interface Effect{
-  applyEffect(state:CardGameState, executionContext:ExecutionContext):CardGameState;
+  applyEffect(state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState;
 }
 
 export default class TextTemplate<T extends Component, ARGS extends Component[]=Component[]>{
@@ -38,7 +49,8 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]=
     Eff: [],
     Player: [],
     N:[],
-    Cond:[]
+    Cond:[],
+    Ability:[]
   }
 
   constructor(slot: GetSlot<T>, template:string, factory:(...args:ARGS)=>T){
@@ -94,6 +106,7 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]=
       Player: [],
       N:[],
       Cond:[],
+      Ability:[],
     }
   }
 }

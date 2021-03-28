@@ -53,12 +53,41 @@ const HEALTH_STYLE:CSSProperties = {
     textAlign: 'center'
 }
 
+const PLAYER_BOARD_STYLE:CSSProperties = {
+    height: 200,
+    display: 'flex',
+    justifyContent:'center',
+    alignItems: 'center',
+    placeContent: 'center',
+
+}
+
 const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game, player, isActive, isHidden, lastmove, gamestate})=>{
     const cardsBeingPlayed = lastmove && lastmove.type === 'play' ? [lastmove.cardNumber] : []
 
     const displayHand = [...player.hand, ...cardsBeingPlayed].sort((a,b)=>a-b);
 
-    return <div style={isActive ? ACTIVE_WRAPPER_STYLE : WRAPPER_STYLE}>
+    const board = <div >
+        <FlipMove style={{...PLAYER_BOARD_STYLE}}>
+            {player.board.map(n=><div key={n+' '+game.cardIndex[n].getName()}>
+                <CardDisplay
+                    onClick={()=>{}}
+                    isOpponent={isHidden}
+                    isHidden={false}
+                    card={game.cardIndex[n]}
+                    canBePlayed={false}
+                    canBeDiscarded={false}
+                    beingPlayed={false}
+                    onBoard={true}
+                />
+            </div>)}
+        </FlipMove>
+    </div>
+
+    return <div>
+
+        {!isHidden && board}
+        <div style={isActive ? ACTIVE_WRAPPER_STYLE : WRAPPER_STYLE}>
         <div style={HEALTH_WRAPPER_STYLE}>
             ❤
            <div style={HEALTH_STYLE}>
@@ -75,6 +104,7 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
                     canBePlayed={isActive && !isHidden && gamestate.step === 'play' && !cardsBeingPlayed.includes(n)}
                     canBeDiscarded={isActive && !isHidden && gamestate.step === 'draw' && !cardsBeingPlayed.includes(n)}
                     beingPlayed={cardsBeingPlayed.includes(n)}
+                    onBoard={player.board.includes(n)}
                 />
             </div>)}
         </FlipMove>
@@ -87,6 +117,8 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
             cards={player.discardPile.map(n=>game.cardIndex[n])}
         />
     </div>
+        {isHidden && board}
+    </div>
 }
 
 const GameBoard:FunctionComponent<GameBoardProps> = (props)=>{
@@ -96,7 +128,7 @@ const GameBoard:FunctionComponent<GameBoardProps> = (props)=>{
             Step: {gamestate.step}
         </div>
         <PlayerDisplay onCardClick={()=>{}} game={game} gamestate={gamestate} player={gamestate.playerTwo} lastmove={gamestate.activePlayer === 2 ? lastmove: undefined} isActive={gamestate.activePlayer === 2} isHidden={true}/>
-        <div style={{height: "50vh"}}></div>
+
         <PlayerDisplay onCardClick={onCardClick} game={game} gamestate={gamestate} player={gamestate.playerOne} lastmove={gamestate.activePlayer === 1 ? lastmove: undefined} isActive={gamestate.activePlayer === 1} isHidden={false}/>
     </>
 }

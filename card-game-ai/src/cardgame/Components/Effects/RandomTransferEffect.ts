@@ -1,30 +1,32 @@
 import TextTemplate, {Effect, ExecutionContext, Fizzle, PlayerTarget} from "../TextTemplate";
 import CardGame, {CardGamePlayerState, CardGameState} from "../../CardGame";
-import {PlayerKey} from "../../Card";
-import {resolveActivePlayer} from "../setup";
+import _ from 'lodash';
 
 type KeysMatching<T, V> = {[K in keyof T]-?: T[K] extends V ? K : never}[keyof T];
 
+export type CardSource = KeysMatching<CardGamePlayerState, readonly number[]>;
+export type CardDest = KeysMatching<CardGamePlayerState, readonly number[]>;
+
 class RandomTransferEffect implements Effect{
     target:PlayerTarget
-    from:KeysMatching<CardGamePlayerState, readonly number[]>;
-    to:KeysMatching<CardGamePlayerState, readonly number[]>;
+    from:CardSource
+    to:CardDest
     n: number;
-    constructor(target:PlayerTarget, from:KeysMatching<CardGamePlayerState, readonly number[]>, to:KeysMatching<CardGamePlayerState, readonly number[]>, n:number) {
+    constructor(target:PlayerTarget, from:CardSource, to:CardDest, n:number) {
         this.target = target;
         this.from = from;
         this.to = to;
         this.n = n;
     }
 
-    applyEffect(state: CardGameState, ctx:ExecutionContext): CardGameState {
+    applyEffect(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
         let s = state;
         for(let i = 0; i<this.n;i++){
-            s = this.transfer(s, ctx);
+            s = this.transfer(s, ctx, game);
         }
         return s;
     }
-    transfer(state: CardGameState, ctx:ExecutionContext): CardGameState {
+    transfer(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
         const targetKey = this.target.resolveValue(state, ctx);
         const player = state[targetKey];
         const fromPile = [...player[this.from]];
@@ -40,7 +42,7 @@ class RandomTransferEffect implements Effect{
         }
         const drawIndex = Math.floor(Math.random() * fromPile.length);
         toPile.push(...fromPile.splice(drawIndex, 1))
-        return {
+        return  {
             ...state,
             [targetKey]:{
                 ...player,
@@ -53,6 +55,16 @@ class RandomTransferEffect implements Effect{
 export class DrawCardEffect extends RandomTransferEffect{
     constructor(target:PlayerTarget, n:number) {
         super(target,'deck', 'hand', n);
+    }
+    transfer(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
+        const s = super.transfer(state, ctx, game);
+        const targetKey = this.target.resolveValue(state, ctx);
+        if(!game)debugger
+        return game.processEvent(s, 'player_draws', {
+            player: targetKey,
+            cardNumbers: _.xor(s[targetKey].hand, state[targetKey].hand),
+            from: 'deck'
+        })
     }
 }
 

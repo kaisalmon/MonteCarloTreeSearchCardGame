@@ -13,7 +13,7 @@ export type WorkerResponse = {
 setupEffects();
 const cardIndex:Record<number, Card> = loadExampleDeck()
 const game = new CardGame(cardIndex)
-const strategy:MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(1000,1000)
+const strategy:MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(1000,100)
 
 export function processData(state: CardGameState): WorkerResponse {
   const move =  strategy.pickMove(game, state);

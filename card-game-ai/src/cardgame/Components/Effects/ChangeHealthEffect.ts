@@ -1,5 +1,5 @@
 import TextTemplate, {Effect, ExecutionContext, PlayerTarget} from "../TextTemplate";
-import {CardGameState} from "../../CardGame";
+import CardGame, {CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 
 export class ChangeHealthEffect implements Effect{
@@ -9,15 +9,19 @@ export class ChangeHealthEffect implements Effect{
         this.target=target;
         this.amount=amount;
     }
-    applyEffect(state: CardGameState, ctx:ExecutionContext): CardGameState {
+    applyEffect(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
         const targetKey = this.target.resolveValue(state, ctx);
-        return {
+        const s =  {
             ...state,
             [targetKey]:{
                 ...state[targetKey],
                 health:state[targetKey].health + this.amount
             }
         }
+        return game.processEvent(s, 'player_take_damage', {
+            amount: this.amount,
+            player: targetKey
+        })
     }
 }
 
