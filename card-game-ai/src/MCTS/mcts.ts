@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import promptSync from 'prompt-sync'
 import objectHash from 'object-hash'
+import fishersExactTest from 'fishers-exact-test'
+
 const prompt = promptSync();
 
 export enum GameStatus{
@@ -36,7 +38,14 @@ export type MoveFromGame<G> = G extends Game<any, infer U> ?  U : never;
 
 export class RandomStrategy<STATE extends GameState, T> implements Strategy<STATE, T>{
     mood = "none";
+    trueRandom: boolean;
+
+    constructor(trueRandom:boolean = false) {
+        this.trueRandom = trueRandom;
+    }
+
     pickMove(game:Game<STATE, T>, state: STATE): T {
+        if(this.trueRandom) return _.sample(game.getValidMoves(state))!;
         const sensibleMove = _.sample(game.getSensibleMoves(state))
         if (sensibleMove){
             this.mood = "Sensible"
@@ -125,14 +134,14 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
                 }
                 evaluation.depth += simulation.length;
             })
-            if(this.pruningThreshold !== undefined && i % 10 == 9){
+            if(this.pruningThreshold !== undefined && i % 50 == 49){
                  const highestEval =  _.maxBy(evaluations, 'score')!;
-                 const highestScore = (highestEval.score / highestEval.outOf)/2 + 0.5; //Rescaled to 0 - 1
-                 const maxDifference = this.pruningThreshold * 1/Math.pow(i,0.3);
+                 const bestWins = Math.floor(((highestEval.score/highestEval.outOf)/2 + 0.5) * highestEval.outOf);
                  evaluations = evaluations.filter(evaluation=> {
-                    const score = (evaluation.score/evaluation.outOf)/2 + 0.5; //Rescaled to 0 - 1
-                    const difference = highestScore - score;
-                    return difference <= maxDifference;
+                     if(evaluation === highestEval) return true;
+                     const evaluationWins = Math.floor(((evaluation.score/evaluation.outOf)/2 + 0.5) * evaluation.outOf);
+                     const p = fishersExactTest(evaluationWins,bestWins,evaluation.outOf - evaluationWins,highestEval.outOf - bestWins);
+                    return p.leftPValue >  this.pruningThreshold!;
                  });
             }
             if(evaluations.length === 1){
