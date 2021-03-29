@@ -1,5 +1,5 @@
 import setup from '../Components/setup';
-import {Card, EffectCard, ItemCard} from "../Card";
+import {Card, ChoiceActionCard, EffectCard, ItemCard} from "../Card";
 import TextTemplate from "../Components/TextTemplate";
 
 const cardText = [
@@ -22,7 +22,11 @@ const cardText = [
 
 const abilityCardText = [
     'Whenever your opponent takes damage, if you have less than 2 cards in your hand, draw a card',
-    'At the start of your turn, gain one health',
+  //  'At the start of your turn, gain one health',
+]
+
+const choiceCards = [
+    'Choose a player. That player draws 2 cards',
 ]
 
 export default function():Record<number, Card>{
@@ -30,13 +34,20 @@ export default function():Record<number, Card>{
         throw new Error("Text Templates not setup")
     }
    return [
-       ...cardText.map((text, i) => {
+       ...[...cardText, ...cardText].map((text, i) => {
             const effect = TextTemplate.parse('Eff', text);
-            return new EffectCard(effect, text, `Card ${i}`);
+            return new EffectCard(effect, text, `Card ${i}`, i);
         }),
         ...abilityCardText.map((text, i) => {
             const ability = TextTemplate.parse('Ability', text);
-            return new ItemCard(ability, text, `Card ${i}`);
+            const n = 2*cardText.length + i;
+            return new ItemCard(ability, text, `Card ${n}`, n);
+        }),
+
+        ...choiceCards.map((text, i) => {
+            const n = 2*cardText.length + abilityCardText.length +  i;
+            const choice = TextTemplate.parse('ChoiceAction', text);
+            return new ChoiceActionCard(choice, text, `Card ${n}`, n);
         }),
    ]
 }

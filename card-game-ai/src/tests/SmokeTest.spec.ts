@@ -11,8 +11,7 @@ describe("Smoketest", ()=> {
 
     it("Can run a full game", () => {
         const cardIndex:Record<number, Card> = loadExampleDeck();
-        const deck = _.flatMap([1,2,3,4].map(()=>Object.keys(cardIndex).map(n=>parseInt(n))));
-        const game = new CardGame(cardIndex, deck);
+        const game = new CardGame(cardIndex);
         const initialState = game.newGame();
 
         const p1Strat:Strategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(3,3)

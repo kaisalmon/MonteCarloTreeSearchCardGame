@@ -1,6 +1,6 @@
 import {Game, GameStatus} from "../MCTS/mcts";
 import chalk from 'chalk'
-import {Card, EffectCard, ItemCard, PlayerKey} from "./Card";
+import {Card, ChoiceActionCard, EffectCard, ItemCard, PlayerKey} from "./Card";
 import {DrawCardEffect} from "./Components/Effects/RandomTransferEffect";
 import {resolveActivePlayer} from "./Components/setup";
 import {Fizzle} from "./Components/TextTemplate";
@@ -17,16 +17,18 @@ export interface CardGamePlayerState {
 
 export interface CardGameState {
     readonly activePlayer: 1|2;
-    readonly step: 'draw'|'play'
+    readonly step: 'draw'|'play'|'choice'
     readonly playerOne: CardGamePlayerState
     readonly playerTwo: CardGamePlayerState;
+    readonly cardBeingPlayed?:number,
     readonly log?:string[],
 }
 
 interface CardGamePlayCardMove {type:"play"; cardNumber:number}
 interface CardGameDiscardCardMove{type:"discard"; cardNumber:number}
 interface CardGameEndMove {type:"end"}
-export type CardGameMove = CardGameEndMove | CardGamePlayCardMove | CardGameDiscardCardMove;
+export interface CardGameChoiceMove {type:"choice", choice:number}
+export type CardGameMove = CardGameEndMove | CardGamePlayCardMove | CardGameDiscardCardMove | CardGameChoiceMove;
 
 
 export default class CardGame implements Game<CardGameState, CardGameMove>{
@@ -49,12 +51,17 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
             return this.applyCardPlay(state, move.cardNumber)
         }else if(move.type === "discard"){
             return this.applyCardDiscard(state, move.cardNumber)
+        }else if(move.type === "choice"){
+            return this.applyChoiceMove(state, move)
         }
         throw new Error("Unknown move")
     }
 
     getSensibleMoves(state: CardGameState): CardGameMove[] {
         return this.getCardMoves(state).filter(({cardNumber})=>{
+            if(!this.cardIndex[cardNumber]){
+                debugger
+            }
             const {effect} = (this.cardIndex[cardNumber] as EffectCard)
             if(effect?.constructor.name !== "ConditionalEffect") {
                 return true;
@@ -75,9 +82,13 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     }
 
     getValidMoves(state: CardGameState): CardGameMove[] {
-        if(state.step === 'draw'){
-            return this.getDiscardMoves(state);
+        if(state.cardBeingPlayed!==undefined){
+            const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
+            const card = this.cardIndex[state.cardBeingPlayed];
+            if(!ChoiceActionCard.is(card)) throw new Error("Not a choice card!")
+            return card.choiceAction.getChoices(state, {playerKey}, this);
         }
+        if(state.step === 'draw') return this.getDiscardMoves(state);
         return [{type:"end"}, ...this.getCardMoves(state)]
     }
 
@@ -133,10 +144,12 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     }
 
     private getCardMoves(state: CardGameState):CardGamePlayCardMove[] {
+        if(state.step != 'play') return [];
         const activePlayer = state.activePlayer === 1 ? state.playerOne : state.playerTwo;
         return activePlayer.hand.map(cardNumber=>({type:"play", cardNumber}))
     }
    private getDiscardMoves(state: CardGameState):CardGameDiscardCardMove[] {
+        if(state.step != 'draw') return [];
         const activePlayer = state.activePlayer === 1 ? state.playerOne : state.playerTwo;
         return activePlayer.hand.map(cardNumber=>({type:"discard", cardNumber}))
     }
@@ -215,5 +228,24 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
         })
 
         return state;
+    }
+
+    private applyChoiceMove(state: CardGameState, move: CardGameChoiceMove):CardGameState {
+        const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
+        const card = this.cardIndex[state.cardBeingPlayed!];
+        if(!ChoiceActionCard.is(card)) throw new Error("Not a choice card!")
+        const stateAfterEffects = (()=>{
+            try{
+                return card.choiceAction.applyEffect(move, state, {playerKey}, this);
+            }catch(e){
+                if(!Fizzle.isFizzle(e))throw e;
+                return e.returnState;
+            }
+        })();
+        return {
+            ...stateAfterEffects,
+            step: 'play',
+            cardBeingPlayed: undefined
+        }
     }
 }

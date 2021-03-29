@@ -16,7 +16,6 @@ export class PlayerLessThanCondition implements Resolver<boolean>{
         const player = state[targetKey];
         return this.mapping(player) < this.n;
     }
-
 }
 
 export default function setup(){

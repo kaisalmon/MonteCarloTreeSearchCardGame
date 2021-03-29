@@ -1,5 +1,6 @@
 import React, {CSSProperties, FunctionComponent} from "react";
-import {Card} from "../cardgame/Card";
+import {Card, ChoiceActionCard} from "../cardgame/Card";
+import ChoiceArrow from "./ChoiceArrow";
 
 type CardProps = {
     card:Card,
@@ -12,8 +13,7 @@ type CardProps = {
     onBoard:boolean;
 }
 
-const CARD_STYLE:CSSProperties ={
-    position: "relative",
+const CARD_STYLE:CSSProperties = {
     backgroundColor: 'white',
     borderWidth: '1px',
     borderColor:'black',
@@ -68,7 +68,7 @@ const MOVE_UP_STYLE = {
 
 const HIDDEN_STYLING = {
     backgroundColor: 'darkgray',
-    color: 'darkgray',
+    color: 'white',
     transform: 'rotate3d(0,1,0,0.5turn)'
 }
 
@@ -76,40 +76,54 @@ const VANISHED_STYLE = {
     transform: 'scale(0)'
 }
 
-const CardDisplay:FunctionComponent<CardProps> = (props)=>{
+const WRAPPER_STYLE:CSSProperties = {
+    position: "relative",
+     transition: 'transform 0.3s, margin 0.35s ease-in 0.3s, top 0.4s ease-in-out 0.5s',
+   display:'inline-block',
+    top:0,
+    zIndex: 1,
+}
+
+const CardDisplay:FunctionComponent<CardProps> = (props)=> {
     const [hasAppearedOnBoard, setHasAppearedOnBoard] = React.useState(props.onBoard && !props.beingPlayed)
-    React.useEffect(()=>{
-        if(props.onBoard && props.beingPlayed){
-            const n = setTimeout(()=>{
+    React.useEffect(() => {
+        if (props.onBoard && props.beingPlayed) {
+            const n = setTimeout(() => {
                 setHasAppearedOnBoard(true)
             }, 800)
-            return ()=>window.clearTimeout(n)
-        }else if(props.onBoard && !props.beingPlayed){
-            const n = setTimeout(()=>{
+            return () => window.clearTimeout(n)
+        } else if (props.onBoard && !props.beingPlayed) {
+            const n = setTimeout(() => {
                 setHasAppearedOnBoard(false)
             }, 800)
-            return ()=>window.clearTimeout(n)
+            return () => window.clearTimeout(n)
         }
     })
 
 
     const {card, beingPlayed} = props;
     const situationalStyle = props.canBeDiscarded ? CAN_BE_DISCADED_STYLE :
-                            props.canBePlayed ? CAN_BE_PLAYED_STYLE :
-                            hasAppearedOnBoard ? VANISHED_STYLE :
-                                {};
+        props.canBePlayed ? CAN_BE_PLAYED_STYLE :
+            hasAppearedOnBoard ? VANISHED_STYLE :
+                {};
     const positionStyling = (props.beingPlayed && props.isOpponent) ? MOVE_DOWN_STYLE :
-                            (props.beingPlayed && !props.isOpponent) ? MOVE_UP_STYLE :
-                                {};
+        (props.beingPlayed && !props.isOpponent) ? MOVE_UP_STYLE :
+            {};
     const hiddenStyling = props.isHidden ? HIDDEN_STYLING : {}
-    const onClick = props.canBeDiscarded || props.canBePlayed ? props.onClick : ()=>{};
-    return <div style={{...beingPlayed ? BEING_PLAYED_CARD_STYLE : CARD_STYLE, ...situationalStyle, ...positionStyling, ...hiddenStyling}} onClick={onClick}>
-        <div style={CARD_TITLE_STYLE}>
-            {card.getName()}
+    const onClick = props.canBeDiscarded || props.canBePlayed ? props.onClick : () => {
+    };
+
+    return <div style={{...WRAPPER_STYLE, ...positionStyling}}>
+        <div style={{...beingPlayed ? BEING_PLAYED_CARD_STYLE : CARD_STYLE, ...situationalStyle, ...hiddenStyling}}
+             onClick={onClick}>
+            <div style={CARD_TITLE_STYLE}>
+                {card.getName()}
+            </div>
+            <div>
+                {card.getText()}
+            </div>
         </div>
-          <div>
-            {card.getText()}
-        </div>
+        {props.beingPlayed && ChoiceActionCard.is(card) && <ChoiceArrow/>}
     </div>
 }
 

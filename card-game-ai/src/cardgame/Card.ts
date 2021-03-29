@@ -1,17 +1,23 @@
 import CardGame, {CardGameState} from "./CardGame";
-import {Ability, Effect, Fizzle} from "./Components/TextTemplate";
+import {Ability, ChoiceAction, Effect, Fizzle} from "./Components/TextTemplate";
 
 export type PlayerKey = 'playerOne'|'playerTwo'
 
 export abstract class Card{
+    cardNumber: number;
     abstract getName():string;
     abstract getText():string;
     abstract applyEffect(state:CardGameState, playerKey:PlayerKey, game:CardGame):CardGameState;
 
-    private preEffect(state:CardGameState, cardNumber:number, playerKey:PlayerKey):CardGameState{
+    constructor(cardNumber: number) {
+        this.cardNumber = cardNumber;
+    }
+
+
+    private preEffect(state:CardGameState, playerKey:PlayerKey):CardGameState{
         const player = state[playerKey];
         const hand = [...player.hand]
-        hand.splice(hand.indexOf(cardNumber), 1);
+        hand.splice(hand.indexOf(this.cardNumber), 1);
         return {
             ...state,
             [playerKey]: {
@@ -21,12 +27,12 @@ export abstract class Card{
         }
     }
 
-    protected postEffect(state:CardGameState, cardNumber:number, playerKey:PlayerKey):CardGameState{
+    protected postEffect(state:CardGameState, playerKey:PlayerKey):CardGameState{
         return {
             ...state,
             [playerKey]: {
                 ...state[playerKey],
-                discardPile: [cardNumber, ...state[playerKey].discardPile]
+                discardPile: [this.cardNumber, ...state[playerKey].discardPile]
             }
         }
     }
@@ -34,12 +40,12 @@ export abstract class Card{
     play(state:CardGameState, cardNumber:number, game:CardGame):CardGameState{
         const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
         try{
-            const afterPreEffect = this.preEffect(state,cardNumber,playerKey);
+            const afterPreEffect = this.preEffect(state,playerKey);
             const afterEffect = this.applyEffect(afterPreEffect, playerKey, game);
-            return this.postEffect(afterEffect,cardNumber,playerKey);
+            return this.postEffect(afterEffect,playerKey);
         }catch(e){
             if(!Fizzle.isFizzle(e)) throw e;
-            return this.postEffect(e.returnState, cardNumber, playerKey)
+            return this.postEffect(e.returnState, playerKey)
         }
     }
 }
@@ -48,6 +54,7 @@ export class EffectCard extends Card{
     effect: Effect;
     name: string;
     text: string;
+
     getName(): string {
         return this.name;
     }
@@ -55,8 +62,9 @@ export class EffectCard extends Card{
     getText(): string {
         return this.text;
     }
-    constructor(effect:Effect, text:string, name:string) {
-        super();
+
+    constructor(effect:Effect, text:string, name:string, cardNumber:number) {
+        super(cardNumber);
         this.effect = effect;
         this.text = text;
         this.name = name;
@@ -66,6 +74,37 @@ export class EffectCard extends Card{
             playerKey
         }
         return this.effect.applyEffect(state, ctx, game)
+    }
+}
+export class ChoiceActionCard extends Card{
+    choiceAction: ChoiceAction;
+    name: string;
+    text: string;
+    getName(): string {
+        return this.name;
+    }
+
+    getText(): string {
+        return this.text;
+    }
+    constructor(choiceAction:ChoiceAction, text:string, name:string,cardNumber:number) {
+        super(cardNumber);
+        this.choiceAction = choiceAction;
+        this.text = text;
+        this.name = name;
+    }
+    applyEffect(state: CardGameState, playerKey:PlayerKey, game:CardGame): CardGameState {
+        return {
+            ...state,
+            step:'choice',
+            cardBeingPlayed: this.cardNumber,
+        }
+    }
+    protected postEffect(state:CardGameState, playerKey:PlayerKey):CardGameState {
+        return state;
+    }
+    static is(c:Card): c is ChoiceActionCard{
+        return (c as Record<string, any>).hasOwnProperty('choiceAction')
     }
 }
 
@@ -80,8 +119,8 @@ export class ItemCard extends Card{
     getText(): string {
         return this.text;
     }
-    constructor(ability:Ability, text:string, name:string) {
-        super();
+    constructor(ability:Ability, text:string, name:string, cardNumber:number) {
+        super(cardNumber);
         this.ability = ability;
         this.text = text;
         this.name = name;
@@ -91,12 +130,12 @@ export class ItemCard extends Card{
         return state;
     }
 
-    protected postEffect(state:CardGameState, cardNumber:number, playerKey:PlayerKey):CardGameState{
+    protected postEffect(state:CardGameState, playerKey:PlayerKey):CardGameState{
         return {
             ...state,
             [playerKey]: {
                 ...state[playerKey],
-                board: [cardNumber, ...state[playerKey].board]
+                board: [this.cardNumber, ...state[playerKey].board]
             }
         }
     }

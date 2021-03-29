@@ -1,17 +1,19 @@
-import CardGame, {CardGameState} from "../CardGame";
+import CardGame, {CardGameChoiceMove, CardGameMove, CardGameState} from "../CardGame";
 import {Card, PlayerKey} from "../Card";
 import _ from 'lodash'
 import {EventParams, EventType} from "./Abilities/OnEventAbility";
 
 type Component = ResolveSlot<any>
 type GetSlot<T extends Component> = T extends ResolveSlot<infer R> ? R : any;
-type Slot = 'Eff'|'Player'|'N'|'Cond'|'Ability'
+type Slot = 'Eff'|'Player'|'N'|'Cond'|'Ability'|'ChoiceAction'
 type ResolveSlot<SLOT extends Slot> = SLOT extends 'Eff' ? Effect
                                     : SLOT extends 'Ability' ? Ability
                                     : SLOT extends 'Player' ? PlayerTarget
+                                    : SLOT extends 'ChoiceAction' ? ChoiceAction
                                     : SLOT extends 'Cond' ? Resolver<boolean>
                                     : SLOT extends 'N' ? number
                                     : never;
+
 
 export type ExecutionContext = {
   playerKey: PlayerKey
@@ -33,6 +35,11 @@ export interface Ability {
   abilityType: string;
 }
 
+export interface ChoiceAction {
+  getChoices(state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameChoiceMove[];
+  applyEffect(move:CardGameChoiceMove, state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState;
+}
+
 export interface Effect{
   applyEffect(state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState;
 }
@@ -50,6 +57,7 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]=
     Player: [],
     N:[],
     Cond:[],
+    ChoiceAction:[],
     Ability:[]
   }
 
@@ -103,6 +111,7 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]=
   static clear() {
     this.templates = {
       Eff: [],
+      ChoiceAction:[],
       Player: [],
       N:[],
       Cond:[],

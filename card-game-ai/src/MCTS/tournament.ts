@@ -144,7 +144,7 @@ function main(){
 
     setupEffects();
     const cardIndex:Record<number, Card> = loadExampleDeck();
-    const game = new ConnectFourGame()//new CardGame(cardIndex)
+    const game = new CardGame(cardIndex)
     const bar1 = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
 
     let count = 0;
@@ -152,15 +152,16 @@ function main(){
     const settings:TournamentSettings<typeof game> = {
         game,
         strategies:{
-           // 'Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(),
-           // 'TrueRandom': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(true),
-            //'Greedy': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1,1),
-            'MCTS': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1000,100),
-            'MCTSPruned': (()=>{
+            'Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(),
+            'True Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(true),
+            'Greedy': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1,1, game.getHeuristic),
+            'MCTS-Shallow': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(50,50, game.getHeuristic),
+            'MCTS': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(200,100, game.getHeuristic),
+            /*'MCTSPruned': (()=>{
                 const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1000, 100);
                 s.pruningThreshold = 0.2;
                 return s;
-            })(),
+            })(),*/
         },
         enableMirrorMatches: false,
         maxGameLength: 100,

@@ -6,6 +6,8 @@ import _ from 'lodash'
 
 import FlipMove from 'react-flip-move';
 import CardPile from "./CardPile";
+import ChoiceArrow from "./ChoiceArrow";
+import {ChoiceActionCard} from "../cardgame/Card";
 
 type GameBoardProps = {
     gamestate: CardGameState;
@@ -95,7 +97,7 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
         </div>
         </div>
         <FlipMove style={{...HAND_STYLE}}>
-            {displayHand.map(n=><div key={n+' '+game.cardIndex[n].getName()}>
+            {displayHand.map(n=><div key={n+' '+game.cardIndex[n].getName()} style={{position: 'relative'}}>
                 <CardDisplay
                     onClick={()=>onCardClick(n)}
                     isOpponent={isHidden}

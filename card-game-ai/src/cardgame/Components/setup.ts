@@ -7,6 +7,7 @@ import {setup as setupEventAbilities} from './Abilities/OnEventAbility'
 import TextTemplate, {PlayerTarget} from "./TextTemplate";
 import {PlayerKey} from "../Card";
 import numberToWords from 'number-to-words';
+import {setupChooseAPlayer} from "./ChoiceActions/ChooseAPlayer";
 
 export interface HasTarget{
     target: PlayerTarget;
@@ -56,4 +57,5 @@ export default function () {
     setupConditional();
     setupLessThan();
     setupEventAbilities();
+    setupChooseAPlayer();
 }
