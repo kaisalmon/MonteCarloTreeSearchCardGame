@@ -124,7 +124,7 @@ function runMatch<G extends Game<any, any>>(
             const move = activeStrat.pickMove(game, state);
             const t = performance.now() - start;
             result[state.activePlayer === 1? 'blue_t' : 'red_t']+= t;
-            state = game.applyMove(state, move);
+            state = game.applyMoveChain(state, move);
         }
         const status = game.getStatus(state);
         result.status = status;

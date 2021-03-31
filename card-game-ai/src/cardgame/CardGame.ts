@@ -6,6 +6,9 @@ import {resolveActivePlayer} from "./Components/setup";
 import {Fizzle} from "./Components/TextTemplate";
 import {ConditionalEffect} from "./Components/Effects/ConditionalEffect";
 import {EventParams, EventType, OnEventAbility} from "./Components/Abilities/OnEventAbility";
+import _ from 'lodash'
+
+export type CardGameChain = CardGameMove|CardGameMove[]
 
 export interface CardGamePlayerState {
     readonly health: number;
@@ -31,7 +34,7 @@ export interface CardGameChoiceMove {type:"choice", choice:number}
 export type CardGameMove = CardGameEndMove | CardGamePlayCardMove | CardGameDiscardCardMove | CardGameChoiceMove;
 
 
-export default class CardGame implements Game<CardGameState, CardGameMove>{
+export default class CardGame extends Game<CardGameState, CardGameMove>{
 
     cardIndex:Record<number, Card>;
     deckOne:number[];
@@ -39,6 +42,7 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     static MAX_HAND_SIZE: number = 6;
 
     constructor(cardIndex:Record<number,Card>, deckOne?:number[], deckTwo?:number[]){
+        super();
         this.cardIndex = cardIndex;
         this.deckOne = deckOne ? deckOne : Object.keys(this.cardIndex).map(i=>parseInt(i));
         this.deckTwo = deckTwo ? deckTwo : this.deckOne;
@@ -57,10 +61,11 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
         throw new Error("Unknown move")
     }
 
-    getSensibleMoves(state: CardGameState): CardGameMove[] {
-        return this.getCardMoves(state).filter(({cardNumber})=>{
+    getSensibleMoves(state: CardGameState): CardGameChain[] {
+        return this.getCardMoves(state).filter((chain)=>{
+            const cardNumber = Array.isArray(chain) ? chain[0].cardNumber : chain.cardNumber;
             if(!this.cardIndex[cardNumber]){
-                debugger
+               throw new Error("Can't find card "+cardNumber)
             }
             const {effect} = (this.cardIndex[cardNumber] as EffectCard)
             if(effect?.constructor.name !== "ConditionalEffect") {
@@ -69,7 +74,7 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
             const {condition} = (effect as ConditionalEffect)
             const playerKey = state.activePlayer === 1 ? 'playerOne' : 'playerTwo';
             return condition.resolveValue(state,{playerKey})
-        });
+        })
     }
 
     getStatus(state: CardGameState): GameStatus {
@@ -81,7 +86,7 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
         return GameStatus.IN_PLAY;
     }
 
-    getValidMoves(state: CardGameState): CardGameMove[] {
+    getValidMoves(state: CardGameState): (CardGameChain)[] {
         if(state.cardBeingPlayed!==undefined){
             const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
             const card = this.cardIndex[state.cardBeingPlayed];
@@ -143,10 +148,20 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
         };
     }
 
-    private getCardMoves(state: CardGameState):CardGamePlayCardMove[] {
+    private getCardMoves(state: CardGameState):(CardGamePlayCardMove|[CardGamePlayCardMove,CardGameChoiceMove])[] {
         if(state.step != 'play') return [];
-        const activePlayer = state.activePlayer === 1 ? state.playerOne : state.playerTwo;
-        return activePlayer.hand.map(cardNumber=>({type:"play", cardNumber}))
+        const playerKey = state.activePlayer === 1 ? 'playerOne' : 'playerTwo';
+        const activePlayer = state[playerKey];
+        return _.flatMap(activePlayer.hand, cardNumber=>{
+            const playMove:CardGamePlayCardMove = {type:"play", cardNumber};
+            const card = this.cardIndex[cardNumber];
+            if(ChoiceActionCard.is(card)){
+                const choices:CardGameChoiceMove[] =  card.choiceAction.getChoices(state, {playerKey} , this);
+                const chain = choices.map(choice => [playMove, choice] as [CardGamePlayCardMove,CardGameChoiceMove])
+                return chain as (CardGamePlayCardMove|[CardGamePlayCardMove,CardGameChoiceMove])[]
+            }
+            return [playMove];
+        })
     }
    private getDiscardMoves(state: CardGameState):CardGameDiscardCardMove[] {
         if(state.step != 'draw') return [];
@@ -233,7 +248,9 @@ export default class CardGame implements Game<CardGameState, CardGameMove>{
     private applyChoiceMove(state: CardGameState, move: CardGameChoiceMove):CardGameState {
         const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
         const card = this.cardIndex[state.cardBeingPlayed!];
-        if(!ChoiceActionCard.is(card)) throw new Error("Not a choice card!")
+        if(!ChoiceActionCard.is(card)) {
+            throw new Error(`${state.cardBeingPlayed} Not a choice card!`)
+        }
         const stateAfterEffects = (()=>{
             try{
                 return card.choiceAction.applyEffect(move, state, {playerKey}, this);

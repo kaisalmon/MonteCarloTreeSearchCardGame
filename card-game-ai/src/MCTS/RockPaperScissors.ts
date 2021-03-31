@@ -10,7 +10,7 @@ type RPSState = {
     redMove?: RPSMove
 }
 
-export class RockPaperScissorsGame implements Game<RPSState, RPSMove>{
+export class RockPaperScissorsGame extends Game<RPSState, RPSMove>{
     applyMove(state: RPSState, move: RPSMove): RPSState {
         return {
             ...state,

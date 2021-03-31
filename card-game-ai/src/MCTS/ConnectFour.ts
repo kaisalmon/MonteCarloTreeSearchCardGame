@@ -3,7 +3,7 @@ import {Game, GameStatus} from "./mcts";
 
 export type ConnectFourMove = {col:number}
 export type ConnectFourState = {activePlayer: 1|2, rows:readonly (readonly(1|2|undefined)[])[]}
-export class ConnectFourGame implements Game<ConnectFourState, ConnectFourMove> {
+export class ConnectFourGame extends Game<ConnectFourState, ConnectFourMove> {
     applyMove(state: ConnectFourState, move: ConnectFourMove): ConnectFourState {
         const newRows = state.rows.map(row=>[...row]);
         newRows[move.col].push(state.activePlayer)

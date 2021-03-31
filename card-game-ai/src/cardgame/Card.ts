@@ -104,6 +104,7 @@ export class ChoiceActionCard extends Card{
         return state;
     }
     static is(c:Card): c is ChoiceActionCard{
+        if(!c) return false;
         return (c as Record<string, any>).hasOwnProperty('choiceAction')
     }
 }

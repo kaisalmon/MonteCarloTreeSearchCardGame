@@ -123,7 +123,7 @@ const CardDisplay:FunctionComponent<CardProps> = (props)=> {
                 {card.getText()}
             </div>
         </div>
-        {props.beingPlayed && ChoiceActionCard.is(card) && <ChoiceArrow/>}
+        {props.beingPlayed && ChoiceActionCard.is(card) && !props.isOpponent && <ChoiceArrow/>}
     </div>
 }
 

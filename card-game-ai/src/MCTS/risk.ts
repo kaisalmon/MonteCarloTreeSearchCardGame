@@ -30,13 +30,14 @@ enum RiskTile {
     PASSABLE='p', IMPASSABLE='i', BONUS='b'
 }
 
-export class RiskGame implements Game<RiskState, RiskMove>{
+export class RiskGame extends Game<RiskState, RiskMove>{
     width: number;
     height: number;
 
     tiles:RiskTile[][]
 
     constructor(map:string) {
+        super();
         const rows = map.split(/\s*\n\s*/);
         this.tiles = []
         try{

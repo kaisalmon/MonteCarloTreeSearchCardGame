@@ -6,7 +6,7 @@ import setupEffects from "../../cardgame/Components/setup";
 
 
 export type WorkerResponse = {
-  move: CardGameMove,
+  move: CardGameMove|CardGameMove[],
   mood: string
 }
 

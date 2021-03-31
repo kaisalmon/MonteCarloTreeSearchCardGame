@@ -18,19 +18,24 @@ interface GameState{
     activePlayer: 1|2,
 }
 
-export interface Game<STATE extends GameState, T>{
-    newGame():STATE;
-     getValidMoves(state:STATE):T[];
-     print(state:STATE):void;
-     getSensibleMoves(state:STATE):T[];
-     randomizeHiddenInfo(state:STATE):STATE;
-     applyMove(state:STATE, move:T):STATE;
-     getStatus(state:STATE):GameStatus;
+export abstract class Game<STATE extends GameState, T>{
+    abstract newGame():STATE;
+    abstract getValidMoves(state:STATE):(T|T[])[];
+    abstract print(state:STATE):void;
+   abstract getSensibleMoves(state:STATE):(T|T[])[];
+     abstract randomizeHiddenInfo(state:STATE):STATE;
+     abstract applyMove(state:STATE, move:T):STATE;
+    abstract getStatus(state:STATE):GameStatus;
+
+    applyMoveChain(state: STATE, chain: T[]|T): STATE{
+        if(!Array.isArray(chain)) return this.applyMove(state, chain)
+        return  chain.reduce((s,move)=>this.applyMove(s, move), state);
+    }
 }
 
 export interface Strategy<STATE extends GameState, T>{
     mood: string;
-    pickMove(game:Game<STATE,T>, state:STATE):T;
+    pickMove(game:Game<STATE,T>, state:STATE):T|T[];
 }
 
 export type StateFromGame<G> = G extends Game<infer U,any> ?  U : never;
@@ -44,8 +49,8 @@ export class RandomStrategy<STATE extends GameState, T> implements Strategy<STAT
         this.trueRandom = trueRandom;
     }
 
-    pickMove(game:Game<STATE, T>, state: STATE): T {
-        if(this.trueRandom) return _.sample(game.getValidMoves(state))!;
+    pickMove(game:Game<STATE, T>, state: STATE): T|T[] {
+
         const sensibleMove = _.sample(game.getSensibleMoves(state))
         if (sensibleMove){
             this.mood = "Sensible"
@@ -74,17 +79,6 @@ export class InputStrategy<STATE extends GameState, T> implements Strategy<STATE
     }
 
 }
-export class GreedyStrategy<STATE extends GameState, T> extends RandomStrategy<STATE, T> {
-    mood = "greedy"
-    pickMove(game: Game<STATE, T>, state: STATE): T {
-        const playerGoal = getPlayerGoal(state.activePlayer);
-        const winningMove = game.getValidMoves(state).find(move=>game.getStatus(game.applyMove(state,move)) === playerGoal)
-        if(winningMove) {
-            return winningMove;
-        }
-        return super.pickMove(game, state);
-    }
-}
 
 export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, T>{
     mood = "waiting..."
@@ -95,7 +89,7 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
 
     pruningThreshold?:number=undefined;
     useCache:boolean=false;
-    private cache:Record<string,T> = {};
+    private cache:Record<string,T|T[]> = {};
 
     constructor(samples=60, depth=100, inPlayHeuristic: (state:STATE)=>number = ()=>0, simulationStrategy:Strategy<STATE, T> = new RandomStrategy()) {
         this.simulationStrategy = simulationStrategy;
@@ -104,7 +98,7 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         this.inPlayHeuristic = inPlayHeuristic;
     }
 
-    pickMove(game:Game<STATE, T>, state: STATE): T {
+    pickMove(game:Game<STATE, T>, state: STATE): T|T[] {
         if(!this.useCache)return this.performPickMove(game, state);
         const hash = objectHash(state);
         if(!this.cache[hash]){
@@ -112,7 +106,7 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         }
         return this.cache[hash];
     }
-    performPickMove(game:Game<STATE, T>, state: STATE): T {
+    performPickMove(game:Game<STATE, T>, state: STATE): T|T[] {
         let evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, depth: 0,unfinished:0}));
         if(evaluations.length === 0) throw new Error('No valid moves')
         const playerGoal = getPlayerGoal(state.activePlayer);
@@ -120,7 +114,8 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         for(let i = 0; i < iterations; i++){
             evaluations.forEach(evaluation=>{
                 const stateWithScrambledUnknowns = game.randomizeHiddenInfo(state);
-                const newState = game.applyMove(stateWithScrambledUnknowns, evaluation.move);
+                const moves = Array.isArray(evaluation.move) ? evaluation.move : [evaluation.move]
+                const newState = game.applyMoveChain(state, moves)
                 const simulation = this.simulateGame(game, newState) ;
                 evaluation.outOf++;
                 if(simulation.status === playerGoal){
@@ -188,7 +183,7 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
             try{
                 const move = this.simulationStrategy.pickMove(game, curState);
                 if(!move) return {status: GameStatus.DRAW, length: i};
-                curState = game.applyMove(curState, move);
+                curState = game.applyMoveChain(curState, move)
             }catch(e){
                 if(e.message.includes('No valid move')) return {status: GameStatus.DRAW, length: i};
                 throw e;

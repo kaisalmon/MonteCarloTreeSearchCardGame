@@ -26,7 +26,7 @@ describe("Basic CardDisplay Game Stuff", ()=>{
         let state: CardGameState;
         before(() => {
             const cardIndex: Record<number, Card> = {
-                0: new IdentityCard(),
+                0: new IdentityCard(0),
             }
             game = new CardGame(cardIndex, new Array(20).fill(0));
         })

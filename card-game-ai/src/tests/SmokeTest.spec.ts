@@ -23,7 +23,7 @@ describe("Smoketest", ()=> {
             moves += 1;
             const activeStrat = state.activePlayer === 1 ? p1Strat : p2Strat;
             const move = activeStrat.pickMove(game, state);
-            state = game.applyMove(state, move);
+            state = game.applyMoveChain(state, move);
         }
     })
 
