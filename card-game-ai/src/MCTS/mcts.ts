@@ -41,6 +41,13 @@ export interface Strategy<STATE extends GameState, T>{
 export type StateFromGame<G> = G extends Game<infer U,any> ?  U : never;
 export type MoveFromGame<G> = G extends Game<any, infer U> ?  U : never;
 
+export function wilsonScore(successes:number, trails:number, z=1.96){
+    const failures = trails - successes;
+    const base = (successes + 0.5 * z * z)/(trails + z*z);
+    const plusMinus = z / (trails+z*z) * Math.sqrt(successes*failures/trails + z*z/4)
+    return {lowerBound:base-plusMinus, upperBound:base+plusMinus}
+}
+
 export class RandomStrategy<STATE extends GameState, T> implements Strategy<STATE, T>{
     mood = "none";
     trueRandom: boolean;
@@ -50,8 +57,7 @@ export class RandomStrategy<STATE extends GameState, T> implements Strategy<STAT
     }
 
     pickMove(game:Game<STATE, T>, state: STATE): T|T[] {
-
-        const sensibleMove = _.sample(game.getSensibleMoves(state))
+        const sensibleMove = !this.trueRandom && _.sample(game.getSensibleMoves(state))
         if (sensibleMove){
             this.mood = "Sensible"
             return sensibleMove;
@@ -87,7 +93,9 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
     private depth:number;
     private inPlayHeuristic:(state:STATE)=>number;
 
-    pruningThreshold?:number=undefined;
+    usePruning:boolean=false;
+    z: number = 1.96;
+    pruningPeriod: number = 50;
     useCache:boolean=false;
     private cache:Record<string,T|T[]> = {};
 
@@ -107,7 +115,7 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         return this.cache[hash];
     }
     performPickMove(game:Game<STATE, T>, state: STATE): T|T[] {
-        let evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, depth: 0,unfinished:0}));
+        let evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, depth: 0,unfinished:0, wins:0}));
         if(evaluations.length === 0) throw new Error('No valid moves')
         const playerGoal = getPlayerGoal(state.activePlayer);
         const iterations = Math.ceil(this.samples/evaluations.length);
@@ -115,28 +123,32 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
             evaluations.forEach(evaluation=>{
                 const stateWithScrambledUnknowns = game.randomizeHiddenInfo(state);
                 const moves = Array.isArray(evaluation.move) ? evaluation.move : [evaluation.move]
-                const newState = game.applyMoveChain(state, moves)
+                const newState = game.applyMoveChain(stateWithScrambledUnknowns, moves)
                 const simulation = this.simulateGame(game, newState) ;
                 evaluation.outOf++;
                 if(simulation.status === playerGoal){
                     evaluation.score++;
+                    evaluation.wins++;
                 }else if(simulation.status !== GameStatus.DRAW && simulation.status !== GameStatus.IN_PLAY){
                     evaluation.score--;
                 }else if(simulation.heuristic !== undefined){
                     const desire = state.activePlayer === 1 ? 1 : -1;
                     evaluation.score += simulation.heuristic * desire ;
+                    evaluation.wins += (evaluation.score+1)/2;
                     evaluation.unfinished++;
+                }else if(simulation.status === GameStatus.DRAW){
+                    evaluation.wins += 0.5;
                 }
                 evaluation.depth += simulation.length;
             })
-            if(this.pruningThreshold !== undefined && i % 50 == 49){
+            if(this.usePruning && (i % this.pruningPeriod) === (this.pruningPeriod - 1)){
                  const highestEval =  _.maxBy(evaluations, 'score')!;
-                 const bestWins = Math.floor(((highestEval.score/highestEval.outOf)/2 + 0.5) * highestEval.outOf);
+                 const bestWilsonScore = wilsonScore(highestEval.wins, highestEval.outOf, this.z)
                  evaluations = evaluations.filter(evaluation=> {
                      if(evaluation === highestEval) return true;
-                     const evaluationWins = Math.floor(((evaluation.score/evaluation.outOf)/2 + 0.5) * evaluation.outOf);
-                     const p = fishersExactTest(evaluationWins,bestWins,evaluation.outOf - evaluationWins,highestEval.outOf - bestWins);
-                    return p.leftPValue >  this.pruningThreshold!;
+                     const evaluationWilsonScore = wilsonScore(evaluation.wins, evaluation.outOf, this.z)
+                     const confidentIsSuboptimal =  bestWilsonScore.lowerBound > evaluationWilsonScore.upperBound;
+                     return !confidentIsSuboptimal
                  });
             }
             if(evaluations.length === 1){

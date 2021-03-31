@@ -38,6 +38,7 @@ type MatchUpResult<G> = {
     status: GameStatus,
     blue_t: number,
     red_t: number,
+    length: number,
     state: StateFromGame<G>
 }
 
@@ -71,8 +72,8 @@ export function runTournament<G extends Game<any, any>>(settings:TournamentSetti
                 result.strategiesSummaries[blueStratName].wins++;
             }
             if(matchResult.status === GameStatus.LOSE) result.strategiesSummaries[redStratName].wins++;
-            result.strategiesSummaries[blueStratName].t += matchResult.blue_t;
-            result.strategiesSummaries[redStratName].t += matchResult.red_t;
+            result.strategiesSummaries[blueStratName].t += matchResult.blue_t / matchResult.length;
+            result.strategiesSummaries[redStratName].t += matchResult.red_t / matchResult.length;;
             result.strategiesSummaries[redStratName].games++;
             result.strategiesSummaries[blueStratName].games++;
             result.summary[matchResult.status]++;
@@ -115,6 +116,7 @@ function runMatch<G extends Game<any, any>>(
         status: GameStatus.IN_PLAY,
         blue_t: 0,
         red_t: 0,
+        length:0,
         state
     }
     try {
@@ -122,6 +124,7 @@ function runMatch<G extends Game<any, any>>(
             const activeStrat = state.activePlayer === 1 ? blueStrat : redStrat;
             const start = performance.now();
             const move = activeStrat.pickMove(game, state);
+            result.length++;
             const t = performance.now() - start;
             result[state.activePlayer === 1? 'blue_t' : 'red_t']+= t;
             state = game.applyMoveChain(state, move);
@@ -144,28 +147,36 @@ function main(){
 
     setupEffects();
     const cardIndex:Record<number, Card> = loadExampleDeck();
-    const game = new CardGame(cardIndex)
+    const game = new ConnectFourGame()//new CardGame(cardIndex)
+    const heuristic = ()=>0;
     const bar1 = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+
 
     let count = 0;
 
     const settings:TournamentSettings<typeof game> = {
         game,
         strategies:{
-            'Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(),
-            'True Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(true),
-            'Greedy': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1,1, game.getHeuristic),
-            'MCTS-Shallow': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(50,50, game.getHeuristic),
-            'MCTS': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(200,100, game.getHeuristic),
-            /*'MCTSPruned': (()=>{
-                const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1000, 100);
-                s.pruningThreshold = 0.2;
+           // 'Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(),
+            //'True Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(true),
+           // 'Greedy': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1,1, game.getHeuristic),
+           // 'MCTS Shallow': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(50,50, game.getHeuristic),
+            'MCTS': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(500,100, heuristic),
+             'MCTS Pruned': (()=>{
+                const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(530, 100, heuristic);
+                s.usePruning = true;
                 return s;
-            })(),*/
+            })(),
+            'MCTS Pruned Often': (()=>{
+                const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(600, 100, heuristic);
+                s.usePruning = true;
+                s.pruningPeriod=1;
+                return s;
+            })(),
         },
         enableMirrorMatches: false,
         maxGameLength: 100,
-        gamesPerMatchUp: 1,
+        gamesPerMatchUp: 50,
         eloConstant: 30,
         onGameEnd: ()=>{bar1.update(++count)}
     };
@@ -173,6 +184,9 @@ function main(){
     const results = runTournament(settings)
     bar1.stop();
 
-    console.log(results)
+    console.log({
+        ...results,
+        strategiesSummaries: _.mapValues(results.strategiesSummaries, summary=>_.mapValues(summary, val => val.toPrecision(4)))
+    })
 }
 main();
