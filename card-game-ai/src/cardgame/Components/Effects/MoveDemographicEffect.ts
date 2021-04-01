@@ -73,24 +73,31 @@ export class ResolvePlayerPosition implements Resolver<{x:number, y:number}>{
   }
 }
 
+export const EXTREMES = {
+    hearts: {x:1, y:-1},
+    clubs: {x:-1, y:-1},
+    diamonds: {x:1, y:1},
+    spades: {x:-1, y:1},
+}
 
 export function setupMoveDemographics(){
     new TextTemplate('Demos', 'All demographics', () => new resolveAllDemographics());
     new TextTemplate('Demos', '%Player followers', (playerTarget:PlayerTarget) => new resolveFollowers(playerTarget));
 
-    new TextTemplate('Position', 'the hearts? extreme', () => new ResolveConstant({x:1, y:-1}));
-    new TextTemplate('Position', 'the clubs? extreme', () => new ResolveConstant({x:-1, y:-1}));
-    new TextTemplate('Position', 'the diamonds? extreme', () => new ResolveConstant({x:1, y:1}));
-    new TextTemplate('Position', 'the spades? extreme', () => new ResolveConstant({x:-1, y:1}));
+
+    Object.entries(EXTREMES).forEach(([extreme, position]) => {
+        new TextTemplate('Position', `the ${extreme} extreme`, () => new ResolveConstant(position));
+    });
+
     new TextTemplate('Position', 'the cente?re?', () => new ResolveConstant({x:0, y:0}));
 
     new TextTemplate('Position', '%Player', (playerTarget:PlayerTarget) => new ResolvePlayerPosition(playerTarget));
 
     new TextTemplate('Eff',
         '%Demos shift towards %Position',
-        (demos:Resolver<number[]>, point:Resolver<{x:number, y:number}>)=>new MoveDemographicTowardsPointEffect(demos, point, 0.2));
+        (demos:Resolver<number[]>, point:Resolver<{x:number, y:number}>)=>new MoveDemographicTowardsPointEffect(demos, point, 1/21));
     new TextTemplate('Eff',
         '%Demos shift away from %Position',
-        (demos:Resolver<number[]>, point:Resolver<{x:number, y:number}>)=>new MoveDemographicTowardsPointEffect(demos, point, -0.2));
+        (demos:Resolver<number[]>, point:Resolver<{x:number, y:number}>)=>new MoveDemographicTowardsPointEffect(demos, point, -1/21));
 
 }

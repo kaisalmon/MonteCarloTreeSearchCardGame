@@ -6,7 +6,6 @@ import setupEffects from '../cardgame/Components/setup'
 import CardGame from "../cardgame/CardGame";
 import _ from 'lodash'
 import cliProgress from 'cli-progress';
-import {ConnectFourGame} from "./ConnectFour";
 
 
 type TournamentSettings<G extends Game<any, any>> = {
@@ -70,6 +69,8 @@ export function runTournament<G extends Game<any, any>>(settings:TournamentSetti
             if(matchResult.status === GameStatus.WIN) {
                 result.matchUpWins[blueStratName][redStratName]++;
                 result.strategiesSummaries[blueStratName].wins++;
+            }else if(matchResult.status === GameStatus.LOSE){
+                result.strategiesSummaries[redStratName].wins++;
             }
             if(matchResult.status === GameStatus.LOSE) result.strategiesSummaries[redStratName].wins++;
             result.strategiesSummaries[blueStratName].t += matchResult.blue_t / matchResult.length;
@@ -147,8 +148,8 @@ function main(){
 
     setupEffects();
     const cardIndex:Record<number, Card> = loadExampleDeck();
-    const game = new ConnectFourGame()//new CardGame(cardIndex)
-    const heuristic = ()=>0;
+    const game = new CardGame(cardIndex)
+    const heuristic = game.getHeuristic.bind(game);
     const bar1 = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
 
 
@@ -157,26 +158,30 @@ function main(){
     const settings:TournamentSettings<typeof game> = {
         game,
         strategies:{
-           // 'Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(),
-            //'True Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(true),
-           // 'Greedy': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1,1, game.getHeuristic),
-           // 'MCTS Shallow': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(50,50, game.getHeuristic),
-            'MCTS': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(500,100, heuristic),
-             'MCTS Pruned': (()=>{
-                const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(530, 100, heuristic);
+            'Basic AI': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(),
+            'True Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(true),
+            'MCTS Shallow': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(5,1, heuristic),
+            'MCTS Medium': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(30,30, heuristic),
+            'MCTS High Level': (()=>{
+                const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(270, 100, heuristic);
+                s.useCache = true;
                 s.usePruning = true;
+                s.z = 0.8;
+                s.pruningPeriod = 3;
                 return s;
             })(),
-            'MCTS Pruned Often': (()=>{
-                const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(600, 100, heuristic);
+           'MCTS Nested': (()=>{
+                const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(10, 90, heuristic,   new MCTSStrategy(1,1, heuristic));
+                s.useCache = true;
                 s.usePruning = true;
-                s.pruningPeriod=1;
+                s.z = 0.8;
+                s.pruningPeriod = 3;
                 return s;
             })(),
         },
-        enableMirrorMatches: false,
-        maxGameLength: 100,
-        gamesPerMatchUp: 50,
+        enableMirrorMatches: true,
+        maxGameLength: 200,
+        gamesPerMatchUp: 20,
         eloConstant: 30,
         onGameEnd: ()=>{bar1.update(++count)}
     };

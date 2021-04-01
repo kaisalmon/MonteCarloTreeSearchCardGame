@@ -1,4 +1,4 @@
-import CardGame, {CardGameMove, CardGamePlayerState, CardGameState} from "../cardgame/CardGame";
+import CardGame, {CardGameChoiceMove, CardGameMove, CardGamePlayerState, CardGameState} from "../cardgame/CardGame";
 import React, {CSSProperties, FunctionComponent, useEffect} from "react";
 import CardDisplay  from "./CardDisplay";
 import DemographicDisplay from "./DemographicDisplay";
@@ -15,6 +15,8 @@ type GameBoardProps = {
     game: CardGame,
     lastmove: CardGameMove;
     onCardClick: (n:number)=>void;
+    onChoiceClick: (move:CardGameChoiceMove)=>void
+
 }
 type PlayerDisplayProps = {
     isHidden: boolean;
@@ -120,13 +122,17 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
 }
 
 const GameBoard:FunctionComponent<GameBoardProps> = (props)=>{
-    const {gamestate, game, lastmove, onCardClick} = props;
+    const {gamestate, game, lastmove, onCardClick, onChoiceClick} = props;
     return <>
         <div>
             Step: {gamestate.step}
         </div>
         <PlayerDisplay onCardClick={()=>{}} game={game} gamestate={gamestate} player={gamestate.playerTwo} lastmove={gamestate.activePlayer === 2 ? lastmove: undefined} isActive={gamestate.activePlayer === 2} isHidden={true}/>
-        <DemographicDisplay gamestate={gamestate} game={game}/>
+        <DemographicDisplay
+            gamestate={gamestate}
+            game={game}
+            onChoiceClick={onChoiceClick}
+        />
         <PlayerDisplay onCardClick={onCardClick} game={game} gamestate={gamestate} player={gamestate.playerOne} lastmove={gamestate.activePlayer === 1 ? lastmove: undefined} isActive={gamestate.activePlayer === 1} isHidden={false}/>
     </>
 }

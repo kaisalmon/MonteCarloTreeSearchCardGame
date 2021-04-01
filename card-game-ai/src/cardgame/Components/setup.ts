@@ -4,12 +4,13 @@ import setupDamage from './Effects/ChangePlayerValue';
 import setupConditional from './Effects/ConditionalEffect'
 import setupLessThan from './GameConditions/PlayerLessThanCondition'
 import {setup as setupEventAbilities} from './Abilities/OnEventAbility'
-import TextTemplate, {PlayerTarget} from "./TextTemplate";
+import TextTemplate, {ExecutionContext, PlayerTarget} from "./TextTemplate";
 import {PlayerKey} from "../Card";
 import numberToWords from 'number-to-words';
 import {setupChooseAPlayer} from "./ChoiceActions/ChooseAPlayer";
 import {setupMoveDemographics} from './Effects/MoveDemographicEffect'
 import {setupMovePlayer} from "./Effects/MovePlayerEffect";
+import {setupChooseAnExtreme} from "./ChoiceActions/ChooseAnExtreme";
 
 export interface HasTarget{
     target: PlayerTarget;
@@ -20,7 +21,7 @@ export function hasTarget(x:any):x is HasTarget{
 }
 
 export const resolveActivePlayer:PlayerTarget = {
-    resolveValue(_, ctx):PlayerKey {
+    resolveValue(_, ctx:ExecutionContext):PlayerKey {
         ctx.lastPlayer = ctx.playerKey;
         return ctx.playerKey;
     }
@@ -65,4 +66,5 @@ export default function () {
     setupMoveDemographics();
     setupChooseAPlayer();
     setupMovePlayer();
+    setupChooseAnExtreme();
 }

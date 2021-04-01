@@ -52,9 +52,9 @@ export class MovePlayerTowardsPointEffect extends MovePlayerEffect{
 export function setupMovePlayer(){
     new TextTemplate('Eff',
         '%Player shift towards %Position',
-        (playerTarget:PlayerTarget, point:Resolver<{x:number, y:number}>)=>new MovePlayerTowardsPointEffect(playerTarget, point, 0.2));
+        (playerTarget:PlayerTarget, point:Resolver<{x:number, y:number}>)=>new MovePlayerTowardsPointEffect(playerTarget, point, 2/21));
     new TextTemplate('Eff',
         '%Player shift away from %Position',
-        (playerTarget:PlayerTarget, point:Resolver<{x:number, y:number}>)=>new MovePlayerTowardsPointEffect(playerTarget, point, -0.2));
+        (playerTarget:PlayerTarget, point:Resolver<{x:number, y:number}>)=>new MovePlayerTowardsPointEffect(playerTarget, point, -2/21));
 
 }

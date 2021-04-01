@@ -20,6 +20,7 @@ type ResolveSlot<SLOT extends Slot> = SLOT extends 'Eff' ? Effect
 export type ExecutionContext = {
   playerKey: PlayerKey
   lastPlayer?: PlayerKey;
+  lastExtreme?: {x:number, y:number}
 } & (EventContext<EventType> | {})
 
 type EventContext<E extends EventType> = {

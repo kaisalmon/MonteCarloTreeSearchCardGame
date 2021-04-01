@@ -57,6 +57,7 @@ function App() {
     },[combinedGameState, game, isLoading])
     const lastmove  = (Array.isArray(combinedGameState.lastMove)?combinedGameState.lastMove[0] : combinedGameState.lastMove )||{type:'end'}
     const canEndTurn = game.getValidMoves(combinedGameState.state).find(m=>!Array.isArray(m) && m.type==="end");
+
   return (
     <div className="App">
         {status !== GameStatus.IN_PLAY && <h1>{status}</h1>}
@@ -67,6 +68,14 @@ function App() {
           onCardClick={(n)=>{
               if(status !== GameStatus.IN_PLAY)return;
               const move = getMoveFromCardClick(combinedGameState.state,n)
+              const newState = game.applyMove(combinedGameState.state, move);
+            setCombinedGameState({
+                state:newState,
+                lastMove: move
+            })
+          }}
+          onChoiceClick={(move)=>{
+              if(status !== GameStatus.IN_PLAY)return;
               const newState = game.applyMove(combinedGameState.state, move);
             setCombinedGameState({
                 state:newState,

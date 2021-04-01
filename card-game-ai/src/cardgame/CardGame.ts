@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import {Card, ChoiceActionCard, EffectCard, ItemCard, PlayerKey} from "./Card";
 import {DrawCardEffect} from "./Components/Effects/RandomTransferEffect";
 import {resolveActivePlayer} from "./Components/setup";
-import {Fizzle} from "./Components/TextTemplate";
+import {ChoiceAction, Fizzle} from "./Components/TextTemplate";
 import {ConditionalEffect} from "./Components/Effects/ConditionalEffect";
 import {EventParams, EventType, OnEventAbility} from "./Components/Abilities/OnEventAbility";
 import _ from 'lodash'
@@ -21,6 +21,7 @@ export interface CardGamePlayerState {
 
 export interface CardGameState {
     readonly activePlayer: 1|2;
+    readonly isFirstTurn: boolean;
     readonly step: 'draw'|'play'|'choice'
     readonly roundsUntilElection: number;
     readonly cardPlayedThisTurn: boolean;
@@ -67,6 +68,11 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
     }
 
     getSensibleMoves(state: CardGameState): CardGameChain[] {
+        if(state.roundsUntilElection === 1 && state.endRoundAfterThisTurn){
+            const votes = this.getVotes(state);
+            if(votes[state.activePlayer] > votes[(3-state.activePlayer) as 1|2]) return [{type:'end'}]
+        }
+        if(state.cardPlayedThisTurn) return [{type:'end'}]
         return this.getCardMoves(state).filter((chain)=>{
             const cardNumber = Array.isArray(chain) ? chain[0].cardNumber : chain.cardNumber;
             if(!this.cardIndex[cardNumber]){
@@ -102,11 +108,14 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
             .filter(_.identity)
             .countBy()
             .value() as {1:number, 2:number}
-        return votes;
+        return {
+            1: votes[1]||0,
+            2: votes[2]||0
+        };
     }
 
     getStatus(state: CardGameState): GameStatus {
-        if(state.roundsUntilElection != 0) return GameStatus.IN_PLAY;
+        if(state.roundsUntilElection > 0) return GameStatus.IN_PLAY;
         const votes = this.getVotes(state);
         if(votes[1] > votes[2]) return GameStatus.WIN;
         if(votes[1] < votes[2]) return GameStatus.LOSE;
@@ -127,31 +136,34 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
     newGame(): CardGameState {
         const newPlayer = {
             hand:[],
-            popularity: 10,
             discardPile:[],
             board:[]
         }
         const preGame:CardGameState = {
             activePlayer: 1,
-            roundsUntilElection: 1,
+            roundsUntilElection: 4,
             demographics: new Array(50).fill(0).map(()=>({x:(Math.random()+Math.random())-1, y:Math.random()+Math.random()-1})),
             endRoundAfterThisTurn: false,
             cardPlayedThisTurn: false,
             step: 'play',
+            isFirstTurn: true,
             playerOne:{
+                ...newPlayer,
                 deck: this.deckOne,
-                position:{x:0.5, y:0},
-                ...newPlayer
+                popularity: 10,
+                position:{x:0.2, y:0},
             },
             playerTwo:{
                 deck: this.deckTwo,
-                position:{x:-0.5, y:0},
+                position:{x:-0.2, y:0},
+                popularity: 10,
                 ...newPlayer
             }
         };
-        const drawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.MAX_HAND_SIZE);
-        const p1Draw =  drawCardsEffect.applyEffect(preGame,{playerKey: "playerOne"}, this);
-        return drawCardsEffect.applyEffect(p1Draw,{playerKey: "playerTwo"}, this);
+        const blueDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, 1);
+        const redDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.MAX_HAND_SIZE);
+        const p1Draw =  blueDrawCardsEffect.applyEffect(preGame,{playerKey: "playerOne"}, this);
+        return redDrawCardsEffect.applyEffect(p1Draw,{playerKey: "playerTwo"}, this);
     }
 
     print( {playerOne, playerTwo, ...state}: CardGameState): void {
@@ -211,6 +223,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
             ...afterRoundUpdateState,
             step: 'play',
             cardPlayedThisTurn: false,
+            isFirstTurn: false,
             endRoundAfterThisTurn: !state.cardPlayedThisTurn && !roundEnding,
             activePlayer,
         }
@@ -310,5 +323,12 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         }
         const drawEffect = new DrawCardEffect(resolveActivePlayer, 6)
         return drawEffect.applyEffectNoThrow(drawEffect.applyEffectNoThrow(newState, {playerKey:'playerTwo'}, this), {playerKey:'playerOne'}, this);
+    }
+
+    getActiveActionChoice(state:CardGameState): ChoiceAction|undefined{
+        if(state.cardBeingPlayed === undefined) return undefined;
+        const card = this.cardIndex[state.cardBeingPlayed];
+        if(!ChoiceActionCard.is(card)) throw new Error("Not a choice card!")
+        return card.choiceAction
     }
 }

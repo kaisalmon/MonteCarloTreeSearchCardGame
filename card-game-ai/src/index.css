@@ -11,3 +11,10 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.glow{
+  box-shadow: 0 0  5px 5px orange;
+}
+.glow:hover{
+  box-shadow: 0 0  5px 5px white;
+}

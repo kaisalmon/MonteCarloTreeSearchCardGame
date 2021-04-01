@@ -5,15 +5,15 @@ import TextTemplate from "../Components/TextTemplate";
 const cardText:string[] = [
     'All demographics shift towards the hearts extreme',
     'All demographics shift towards the diamonds extreme',
-    'All demographics shift away from the clubs extreme',
+    'All demographics shift towards the clubs extreme',
     'All demographics shift towards the spades extreme',
-    'All demographics shift towards the centre',
-    'All demographics shift towards you',
-    'All demographics shift away from the center',
-    'All demographics shift away from your opponent',
-    'You shift away from your opponent',
-    'You shift towards the center and gain 3 popularity',
-    'Gain one popularity',
+    'You shift towards the hearts extreme. Gain one popularity',
+    'You shift towards the spades extreme. Your opponent loses one popularity',
+    'You shift towards the diamonds extreme. Draw a card',
+    'You shift towards the clubs extreme. Your opponent discards a random card',
+    'Gain three popularity',
+    'Lose two popularity, your followers shift towards you',
+    'gain three popularity, your followers shift away from you',
 ]
 
 const abilityCardText:string[] = [
@@ -22,7 +22,10 @@ const abilityCardText:string[] = [
 ]
 
 const choiceCards = [
-    'Choose a player. That player draws 2 cards',
+    'Choose a player. That player draws 2 cards and loses 3 popularity',
+    'Choose an extreme. All demographics shift towards that extreme',
+    'Choose an extreme. Shift towards that extreme',
+    'Choose an extreme. Gain one popularity and shift towards that extreme'
 ]
 
 export default function():Record<number, Card>{

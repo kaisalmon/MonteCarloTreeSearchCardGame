@@ -17,11 +17,14 @@ export abstract class Card{
     private preEffect(state:CardGameState, playerKey:PlayerKey):CardGameState{
         const player = state[playerKey];
         const hand = [...player.hand]
+        const {isFirstTurn} = state;
+        const cost = 0;
         hand.splice(hand.indexOf(this.cardNumber), 1);
         return {
             ...state,
             [playerKey]: {
                 ...player,
+                popularity: player.popularity - cost,
                 hand
             }
         }

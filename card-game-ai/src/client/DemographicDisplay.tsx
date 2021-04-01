@@ -3,15 +3,18 @@ import React, {CSSProperties} from "react";
 import { usePopperTooltip } from "react-popper-tooltip";
 import "react-popper-tooltip/dist/styles.css";
 import bg from './assets/bg.png'
-import CardGame, {CardGameState} from "../cardgame/CardGame";
+import CardGame, {CardGameChoiceMove, CardGameState} from "../cardgame/CardGame";
 import { Shaders, Node, GLSL } from "gl-react";
 import { Surface } from "gl-react-dom";
-import TransitionProps from "./TransitionProps"; // for React DOM
+import TransitionProps from "./TransitionProps";
+import {ChooseAPlayer} from "../cardgame/Components/ChoiceActions/ChooseAPlayer";
+import {EXTREMES} from "../cardgame/Components/Effects/MoveDemographicEffect";
+import {ChooseAnExtreme, ID_BY_EXTREME} from "../cardgame/Components/ChoiceActions/ChooseAnExtreme"; // for React DOM
 
 type DemographicDisplayProps = {
     gamestate: CardGameState,
     game: CardGame,
-
+    onChoiceClick: (move:CardGameChoiceMove)=>void,
 }
 
 const COMPASS_STYLE:CSSProperties = {
@@ -20,6 +23,7 @@ const COMPASS_STYLE:CSSProperties = {
     border: '1px solid black',
     position: 'relative',
     margin: 10,
+    overflow: 'hidden'
 }
 const PLAYER_STYLE:CSSProperties = {
     width: 30,
@@ -39,7 +43,8 @@ const DEMOGRAPHIC_STYLE:CSSProperties = {
     position: 'absolute',
     top: -5,
     left: -5,
-    transition: 'background 0.3s, transform 0.3s'
+    transition: 'background 0.3s, transform 0.3s',
+    pointerEvents:'none',
 }
 
 const VOTES_BAR_STYLE:CSSProperties = {
@@ -71,8 +76,8 @@ float distSquared( vec2 A, vec2 B )
 }
 
 void main() {
-  vec2 bluePos = vec2(blueX, blueY);
-  vec2 redPos = vec2(redX, redY);
+  vec2 bluePos = vec2(blueX, 1.0-blueY);
+  vec2 redPos = vec2(redX, 1.0-redY);
   float blueScore = bluePop/400.0 - distSquared(bluePos, uv);
   float redScore = redPop/400.0 - distSquared(redPos, uv);
   float blueWins = blueScore > 0.0 && blueScore > redScore ? 1.0 : 0.0;
@@ -141,9 +146,11 @@ const VoteBars = ({redVotes, blueVotes}:VoteBarsProps)=><div style={{display: 'f
 </div>
 
 const DemographicDisplay:React.FunctionComponent<DemographicDisplayProps> = props=>{
-    const {gamestate:{playerOne, playerTwo}} = props;
+    const {gamestate:{playerOne, playerTwo}, onChoiceClick, game} = props;
     const votes = props.game.getVotes(props.gamestate);
-    return <div style={{display:'flex'}}>
+    const isChoosingPlayer = game.getActiveActionChoice(props.gamestate)?.constructor === ChooseAPlayer;
+    const isChoosingExtreme = game.getActiveActionChoice(props.gamestate)?.constructor === ChooseAnExtreme;
+    return <div style={{display:'flex', justifyContent:'space-evenly'}}>
             <div style={COMPASS_STYLE}>
             <AnimatedBackground
                 bluePop={playerOne.popularity}
@@ -153,8 +160,16 @@ const DemographicDisplay:React.FunctionComponent<DemographicDisplayProps> = prop
                 redX={playerTwo.position.x}
                 redY={playerTwo.position.y}
             />
-            <div style={{...PLAYER_STYLE, background:'blue', transform:coordsToTransform(props.gamestate.playerOne.position)}}/>
-            <div style={{...PLAYER_STYLE, background:'red', transform:coordsToTransform(props.gamestate.playerTwo.position)}}/>
+            <div
+                className={isChoosingPlayer ? 'glow' : ''}
+                style={{...PLAYER_STYLE, background:'blue', transform:coordsToTransform(props.gamestate.playerOne.position)}}
+                onClick={()=>isChoosingPlayer && onChoiceClick({type:'choice', choice:1})}
+            />
+            <div
+                className={isChoosingPlayer ? 'glow' : ''}
+                style={{...PLAYER_STYLE, background:'red', transform:coordsToTransform(props.gamestate.playerTwo.position)}}
+                onClick={()=>isChoosingPlayer && onChoiceClick({type:'choice', choice:2})}
+            />
             {props.gamestate.demographics.map(({x,y}, i)=>{
                 const vote = props.game.getDemographicVote(props.gamestate, {x,y})
                 const background = vote === 1 ? 'blue' :
@@ -166,6 +181,22 @@ const DemographicDisplay:React.FunctionComponent<DemographicDisplayProps> = prop
                 }
                 return <div style={{...DEMOGRAPHIC_STYLE, ...positionStyling}} key={i}/>
             })}
+            {isChoosingExtreme && Object.entries(EXTREMES).map(([extreme, point])=>
+                <div
+                    className={'glow'}
+                    onClick={()=>onChoiceClick({type:'choice', choice:ID_BY_EXTREME[extreme]})}
+                    style={{
+                        position: "absolute",
+                        backgroundColor: 'rgba(255, 128, 0, 0.5)',
+                        top: -75,
+                        left: -75,
+                        width: 150,
+                        height: 150,
+                        borderRadius: 500,
+                        transform:coordsToTransform(point)
+                    }}
+                />
+            )}
         </div>
             <div style={{textAlign:'center'}}>
                 Election in

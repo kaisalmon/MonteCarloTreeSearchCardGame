@@ -10,6 +10,8 @@
     "@testing-library/user-event": "^12.1.10",
     "@types/chalk": "^2.2.0",
     "@types/cli-progress": "^3.9.1",
+    "@types/gl-react": "^3.15.3",
+    "@types/gl-react-dom": "^3.15.3",
     "@types/jest": "^26.0.15",
     "@types/node": "^12.0.0",
     "@types/number-to-words": "^1.2.0",
@@ -23,6 +25,8 @@
     "cli-progress": "^3.9.0",
     "delay": "^5.0.0",
     "fishers-exact-test": "^1.0.3",
+    "gl-react": "^5.0.0",
+    "gl-react-dom": "^5.1.0",
     "lodash": "^4.17.21",
     "mocha": "^8.3.2",
     "number-to-words": "^1.2.4",
@@ -45,8 +49,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build && mv ./build ../docs",
     "test": "ts-mocha -p ./tsconfig.json src/**/*.spec.ts",
-    "eject": "react-scripts eject",
-    "smoke": "npx ts-node -O {\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"module\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"commonjs\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"} src/MCTS/tournament.ts"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [

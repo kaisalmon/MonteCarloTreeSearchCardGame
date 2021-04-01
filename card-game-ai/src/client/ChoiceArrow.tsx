@@ -12,7 +12,9 @@ const ARROW_STYLE:CSSProperties= {
     transformOrigin:'top',
     display: 'flex',
     flexDirection: "column-reverse",
-    alignItems: "center"
+    alignItems: "center",
+    cursor: 'none',
+    pointerEvents: 'none',
 }
 
 const HEAD_STYLE:CSSProperties= {
@@ -21,7 +23,8 @@ const HEAD_STYLE:CSSProperties= {
     borderLeft: '20px solid transparent',
     borderRight: '20px solid transparent',
     borderTop: '20px solid orange',
-    cursor: 'none'
+    cursor: 'none',
+    pointerEvents: 'none',
 }
 
 const XOFFSET = 20;

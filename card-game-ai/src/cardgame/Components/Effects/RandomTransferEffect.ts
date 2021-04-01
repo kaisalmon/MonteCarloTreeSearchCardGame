@@ -67,7 +67,7 @@ export class DrawCardEffect extends RandomTransferEffect{
 export default function setup(){
     new TextTemplate('Eff', '%Player draws? %N cards?', (target:PlayerTarget, n:number)=>new DrawCardEffect(target, n));
     new TextTemplate('Eff', '%Player draws? up to %N cards?', (target:PlayerTarget, n:number)=>new DrawCardEffect(target, n));
-    new TextTemplate('Eff', '%Player discards? %N random cards?(?: from your hand)', (target:PlayerTarget, n:number)=>new RandomTransferEffect(target, 'hand','discardPile', n));
+    new TextTemplate('Eff', '%Player discards? %N random cards?', (target:PlayerTarget, n:number)=>new RandomTransferEffect(target, 'hand','discardPile', n));
     new TextTemplate('Eff', '%Player discards? the top card (?:from|of) (?:their|your) deck', (target:PlayerTarget)=>new RandomTransferEffect(target, 'deck','discardPile', 1));
     new TextTemplate('Eff', '%Player discards? %N cards? from the top of (?:their|your) deck', (target:PlayerTarget, n:number)=>new RandomTransferEffect(target, 'deck','discardPile', n));
     new TextTemplate('Eff', '%Player draws? %N random cards? from (?:their|your) discard pile', (target:PlayerTarget, n:number)=>new RandomTransferEffect(target, 'discardPile','hand', n));

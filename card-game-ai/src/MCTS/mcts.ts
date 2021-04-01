@@ -1,8 +1,6 @@
 import _ from 'lodash';
 import promptSync from 'prompt-sync'
 import objectHash from 'object-hash'
-import fishersExactTest from 'fishers-exact-test'
-
 const prompt = promptSync();
 
 export enum GameStatus{
@@ -86,6 +84,7 @@ export class InputStrategy<STATE extends GameState, T> implements Strategy<STATE
 
 }
 
+
 export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, T>{
     mood = "waiting..."
     private simulationStrategy: Strategy<STATE, T>;
@@ -97,6 +96,9 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
     z: number = 1.96;
     pruningPeriod: number = 50;
     useCache:boolean=false;
+
+    secondaryObjective?:(state:STATE)=>number;
+
     private cache:Record<string,T|T[]> = {};
 
     constructor(samples=60, depth=100, inPlayHeuristic: (state:STATE)=>number = ()=>0, simulationStrategy:Strategy<STATE, T> = new RandomStrategy()) {
@@ -115,24 +117,25 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         return this.cache[hash];
     }
     performPickMove(game:Game<STATE, T>, state: STATE): T|T[] {
-        let evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, depth: 0,unfinished:0, wins:0}));
+        let evaluations = game.getValidMoves(state).map(move=>({move, score:0, outOf:0, depth: 0,unfinished:0, wins:0, secondaryObjective:0}));
         if(evaluations.length === 0) throw new Error('No valid moves')
         const playerGoal = getPlayerGoal(state.activePlayer);
         const iterations = Math.ceil(this.samples/evaluations.length);
         for(let i = 0; i < iterations; i++){
             evaluations.forEach(evaluation=>{
+                const desire = state.activePlayer === 1 ? 1 : -1;
                 const stateWithScrambledUnknowns = game.randomizeHiddenInfo(state);
                 const moves = Array.isArray(evaluation.move) ? evaluation.move : [evaluation.move]
                 const newState = game.applyMoveChain(stateWithScrambledUnknowns, moves)
                 const simulation = this.simulateGame(game, newState) ;
                 evaluation.outOf++;
+                evaluation.secondaryObjective += simulation.secondaryObjective * desire;
                 if(simulation.status === playerGoal){
                     evaluation.score++;
                     evaluation.wins++;
                 }else if(simulation.status !== GameStatus.DRAW && simulation.status !== GameStatus.IN_PLAY){
                     evaluation.score--;
                 }else if(simulation.heuristic !== undefined){
-                    const desire = state.activePlayer === 1 ? 1 : -1;
                     evaluation.score += simulation.heuristic * desire ;
                     evaluation.wins += (evaluation.score+1)/2;
                     evaluation.unfinished++;
@@ -159,20 +162,20 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
         const highestScore = highestEval.score / highestEval.outOf
         const bestMoves = evaluations.filter(({score,outOf})=>(score/outOf) > highestScore - 0.01)
 
-        if(highestScore > 0.9) {
-            const result = _.minBy(bestMoves, 'depth')!
+        if(highestScore > 0.95) {
+            const result = this.secondaryObjective ? _.maxBy(bestMoves, 'secondaryObjective')!  : _.minBy(bestMoves, 'depth')!
             this.mood = JSON.stringify({
                 score: (result.score/result.outOf).toFixed(2),
-                goal: 'Minimizing Length to Victory',
+                goal: this.secondaryObjective ? 'Maximizing Secondary Objective' : 'Minimizing Length to Victory',
                 depth: (result.depth / result.outOf).toFixed(2),
                 unfinished: (result.unfinished / result.outOf).toFixed(2)
             })
             return result.move;
-        }else if(highestScore < -0.9){
-            const result = _.maxBy(bestMoves, 'depth')!
+        }else if(highestScore < -0.95){
+            const result = this.secondaryObjective ? _.maxBy(bestMoves, 'secondaryObjective')!  :  _.maxBy(bestMoves, 'depth')!
             this.mood = JSON.stringify({
                 score: (result.score/result.outOf).toFixed(2),
-                goal: 'Delaying time till loss',
+                goal: this.secondaryObjective ? 'Maximizing Secondary Objective' : 'Delaying time till loss',
                 depth: (result.depth / result.outOf).toFixed(2),
                 unfinished: (result.unfinished / result.outOf).toFixed(2)
             })
@@ -187,21 +190,23 @@ export class MCTSStrategy<STATE extends GameState, T>implements Strategy<STATE, 
             return  result.move;
         }
     }
-    simulateGame(game:Game<STATE, T>, state:STATE):{status:GameStatus, length:number, heuristic?:number}{
+    simulateGame(game:Game<STATE, T>, state:STATE):{status:GameStatus, length:number, heuristic?:number, secondaryObjective:number}{
         let curState = state;
         for(let i = 0; i < this.depth; i++){
             const status = game.getStatus(curState);
-            if(status !== GameStatus.IN_PLAY) return {status, length: i};
+            const secondaryObjective = this.secondaryObjective ? this.secondaryObjective(curState) : 0;
+            if(status !== GameStatus.IN_PLAY) return {status, length: i, secondaryObjective};
             try{
                 const move = this.simulationStrategy.pickMove(game, curState);
-                if(!move) return {status: GameStatus.DRAW, length: i};
+                if(!move) return {status: GameStatus.DRAW, length: i, secondaryObjective};
                 curState = game.applyMoveChain(curState, move)
             }catch(e){
-                if(e.message.includes('No valid move')) return {status: GameStatus.DRAW, length: i};
+                if(e.message.includes('No valid move')) return {status: GameStatus.DRAW, length: i, secondaryObjective};
                 throw e;
             }
         }
-        return {status: GameStatus.IN_PLAY, length: this.depth, heuristic: this.inPlayHeuristic(curState)};
+        const secondaryObjective = this.secondaryObjective ? this.secondaryObjective(curState) : 0;
+        return {status: GameStatus.IN_PLAY, length: this.depth, heuristic: this.inPlayHeuristic(curState), secondaryObjective};
     }
 }
 

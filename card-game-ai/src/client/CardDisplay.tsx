@@ -68,7 +68,7 @@ const MOVE_UP_STYLE = {
 
 const HIDDEN_STYLING = {
     backgroundColor: 'darkgray',
-    color: 'white',
+    color: 'darkgray',
     transform: 'rotate3d(0,1,0,0.5turn)'
 }
 

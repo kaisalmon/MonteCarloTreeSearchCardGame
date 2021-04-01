@@ -15,17 +15,21 @@ function TransitionProps<X extends Record<string, unknown>>({
   const [visibleProps, setVisibleProps] = useState(rest);
 
   useEffect(() => {
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       const newVisibleProps:any = {};
+      let requiresUpdate = false;
       for (let key of propList) {
         const currentValue = visibleProps[key as string] as number;
         const targetValue = rest[key as string] as number;
-        const diff = targetValue - currentValue;
-        const newValue = currentValue + diff/20;
+        const diff = targetValue - currentValue
+          if(Math.abs(diff)>0.005){
+              requiresUpdate=true;
+          }
+        const newValue = currentValue + diff/5;
         newVisibleProps[key] = newValue;
       }
-      setVisibleProps(newVisibleProps);
-    });
+      if(requiresUpdate) setVisibleProps(newVisibleProps);
+    },100);
   }, [rest, visibleProps]);
 
   return component({...rest as any, ...visibleProps});
