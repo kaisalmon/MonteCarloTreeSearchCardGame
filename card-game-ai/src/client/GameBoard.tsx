@@ -138,6 +138,7 @@ const GameBoard:FunctionComponent<GameBoardProps> = (props)=>{
             game={game}
             previewState={previewState}
             onChoiceClick={onChoiceClick}
+            setPreview={setPreview}
         />
         <PlayerDisplay onCardClick={onCardClick} setPreview={setPreview} game={game} gamestate={gamestate} player={gamestate.playerOne} lastmove={gamestate.activePlayer === 1 ? lastmove: undefined} isActive={gamestate.activePlayer === 1} isHidden={false}/>
     </>
