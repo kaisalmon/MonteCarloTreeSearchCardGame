@@ -170,6 +170,14 @@ function main(){
                 s.pruningPeriod = 3;
                 return s;
             })(),
+            'MCTS Super High Level': (()=>{
+                const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(800, 100, heuristic);
+                s.useCache = true;
+                s.usePruning = true;
+                s.z = 0.8;
+                s.pruningPeriod = 3;
+                return s;
+            })(),
            'MCTS Nested': (()=>{
                 const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(10, 90, heuristic,   new MCTSStrategy(1,1, heuristic));
                 s.useCache = true;
@@ -179,9 +187,9 @@ function main(){
                 return s;
             })(),
         },
-        enableMirrorMatches: true,
+        enableMirrorMatches: false,
         maxGameLength: 200,
-        gamesPerMatchUp: 20,
+        gamesPerMatchUp: 50,
         eloConstant: 30,
         onGameEnd: ()=>{bar1.update(++count)}
     };
