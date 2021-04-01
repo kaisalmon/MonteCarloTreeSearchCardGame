@@ -1,10 +1,13 @@
 import React, {CSSProperties, FunctionComponent} from "react";
 import {Card, ChoiceActionCard} from "../cardgame/Card";
 import ChoiceArrow from "./ChoiceArrow";
+import ReactHoverDelayTrigger from 'react-hover-delay-trigger'
+import {CardGameMove} from "../cardgame/CardGame";
 
 type CardProps = {
     card:Card,
     onClick:()=>void,
+    setPreview:(move?:CardGameMove)=>void,
     isOpponent:boolean;
     beingPlayed:boolean;
     canBeDiscarded:boolean;
@@ -113,7 +116,12 @@ const CardDisplay:FunctionComponent<CardProps> = (props)=> {
     const onClick = props.canBeDiscarded || props.canBePlayed ? props.onClick : () => {
     };
 
-    return <div style={{...WRAPPER_STYLE, ...positionStyling}}>
+    return <ReactHoverDelayTrigger
+            delay={400}
+            handleHoverTrigger={()=>props.canBePlayed && props.setPreview({type:'play', cardNumber:props.card.cardNumber})}
+            handleHoverCancel={()=>props.setPreview()}
+          >
+            <div style={{...WRAPPER_STYLE, ...positionStyling}}>
         <div style={{...beingPlayed ? BEING_PLAYED_CARD_STYLE : CARD_STYLE, ...situationalStyle, ...hiddenStyling}}
              onClick={onClick}>
             <div style={CARD_TITLE_STYLE}>
@@ -125,6 +133,7 @@ const CardDisplay:FunctionComponent<CardProps> = (props)=> {
         </div>
         {props.beingPlayed && ChoiceActionCard.is(card) && !props.isOpponent && <ChoiceArrow/>}
     </div>
+        </ReactHoverDelayTrigger>
 }
 
 export default CardDisplay;

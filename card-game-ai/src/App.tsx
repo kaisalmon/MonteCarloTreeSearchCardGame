@@ -33,6 +33,7 @@ function App() {
   const status = useMemo(()=>game.getStatus(combinedGameState.state),[game, combinedGameState.state])
 
   const [mood, setMood] = React.useState('...');
+  const [previewState, setPreviewState] = React.useState<CardGameState|undefined>()
 
     const [isLoading, setIsLoading] = React.useState(false);
 
@@ -65,10 +66,12 @@ function App() {
           gamestate={combinedGameState.state}
           game={game}
           lastmove={lastmove}
+          previewState={previewState}
           onCardClick={(n)=>{
               if(status !== GameStatus.IN_PLAY)return;
               const move = getMoveFromCardClick(combinedGameState.state,n)
               const newState = game.applyMove(combinedGameState.state, move);
+              setPreviewState(undefined)
             setCombinedGameState({
                 state:newState,
                 lastMove: move
@@ -77,11 +80,13 @@ function App() {
           onChoiceClick={(move)=>{
               if(status !== GameStatus.IN_PLAY)return;
               const newState = game.applyMove(combinedGameState.state, move);
+              setPreviewState(undefined)
             setCombinedGameState({
                 state:newState,
                 lastMove: move
             })
           }}
+          setPreview={move=>setPreviewState( move && game.applyMove(combinedGameState.state, move))}
       />
 
       <button

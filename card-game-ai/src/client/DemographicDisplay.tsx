@@ -15,6 +15,7 @@ type DemographicDisplayProps = {
     gamestate: CardGameState,
     game: CardGame,
     onChoiceClick: (move:CardGameChoiceMove)=>void,
+    previewState?: CardGameState;
 }
 
 const COMPASS_STYLE:CSSProperties = {
@@ -179,7 +180,17 @@ const DemographicDisplay:React.FunctionComponent<DemographicDisplayProps> = prop
                     transform: coordsToTransform({x,y}),
                     background
                 }
-                return <div style={{...DEMOGRAPHIC_STYLE, ...positionStyling}} key={i}/>
+                const preview = props.previewState?.demographics[i];
+                const ghostStyling:CSSProperties = {
+                    transform: preview ? coordsToTransform(preview) : positionStyling.transform,
+                    opacity: preview && (preview.x !== x || preview.y !== y) ? .5 : 0,
+                    borderColor:'white',
+                    background
+                }
+                return <>
+                     <div style={{...DEMOGRAPHIC_STYLE, ...positionStyling}} key={i}/>
+                    <div style={{...DEMOGRAPHIC_STYLE,  ...ghostStyling}} key={`${i}_preview`}/>
+                </>
             })}
             {isChoosingExtreme && Object.entries(EXTREMES).map(([extreme, point])=>
                 <div

@@ -14,7 +14,9 @@ type GameBoardProps = {
     gamestate: CardGameState;
     game: CardGame,
     lastmove: CardGameMove;
+    previewState?: CardGameState;
     onCardClick: (n:number)=>void;
+    setPreview: (move?:CardGameMove)=>void,
     onChoiceClick: (move:CardGameChoiceMove)=>void
 
 }
@@ -26,6 +28,7 @@ type PlayerDisplayProps = {
     gamestate: CardGameState;
     game: CardGame;
     onCardClick: (n:number)=>void;
+    setPreview: (move?:CardGameMove)=>void,
 }
 
 const WRAPPER_STYLE:CSSProperties = {
@@ -67,7 +70,7 @@ const PLAYER_BOARD_STYLE:CSSProperties = {
 
 }
 
-const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game, player, isActive, isHidden, lastmove, gamestate})=>{
+const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, setPreview, game, player, isActive, isHidden, lastmove, gamestate})=>{
     const cardsBeingPlayed = lastmove && lastmove.type === 'play' ? [lastmove.cardNumber] : []
 
     const displayHand = [...player.hand, ...cardsBeingPlayed].sort((a,b)=>a-b);
@@ -77,6 +80,7 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
             {player.board.map(n=><div key={n+' '+game.cardIndex[n].getName()}>
                 <CardDisplay
                     onClick={()=>{}}
+                    setPreview={()=>{}}
                     isOpponent={isHidden}
                     isHidden={false}
                     card={game.cardIndex[n]}
@@ -100,6 +104,7 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
                 {displayHand.map(n=><div key={n+' '+game.cardIndex[n].getName()} style={{position: 'relative'}}>
                     <CardDisplay
                         onClick={()=>onCardClick(n)}
+                        setPreview={setPreview}
                         isOpponent={isHidden}
                         isHidden={isHidden && !cardsBeingPlayed.includes(n)}
                         card={game.cardIndex[n]}
@@ -122,18 +127,19 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
 }
 
 const GameBoard:FunctionComponent<GameBoardProps> = (props)=>{
-    const {gamestate, game, lastmove, onCardClick, onChoiceClick} = props;
+    const {gamestate, game, lastmove, onCardClick, onChoiceClick, setPreview, previewState} = props;
     return <>
         <div>
             Step: {gamestate.step}
         </div>
-        <PlayerDisplay onCardClick={()=>{}} game={game} gamestate={gamestate} player={gamestate.playerTwo} lastmove={gamestate.activePlayer === 2 ? lastmove: undefined} isActive={gamestate.activePlayer === 2} isHidden={true}/>
+        <PlayerDisplay onCardClick={()=>{}} setPreview={()=>{}} game={game} gamestate={gamestate} player={gamestate.playerTwo} lastmove={gamestate.activePlayer === 2 ? lastmove: undefined} isActive={gamestate.activePlayer === 2} isHidden={true}/>
         <DemographicDisplay
             gamestate={gamestate}
             game={game}
+            previewState={previewState}
             onChoiceClick={onChoiceClick}
         />
-        <PlayerDisplay onCardClick={onCardClick} game={game} gamestate={gamestate} player={gamestate.playerOne} lastmove={gamestate.activePlayer === 1 ? lastmove: undefined} isActive={gamestate.activePlayer === 1} isHidden={false}/>
+        <PlayerDisplay onCardClick={onCardClick} setPreview={setPreview} game={game} gamestate={gamestate} player={gamestate.playerOne} lastmove={gamestate.activePlayer === 1 ? lastmove: undefined} isActive={gamestate.activePlayer === 1} isHidden={false}/>
     </>
 }
 
