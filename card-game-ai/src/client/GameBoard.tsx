@@ -1,6 +1,7 @@
 import CardGame, {CardGameMove, CardGamePlayerState, CardGameState} from "../cardgame/CardGame";
 import React, {CSSProperties, FunctionComponent, useEffect} from "react";
 import CardDisplay  from "./CardDisplay";
+import DemographicDisplay from "./DemographicDisplay";
 
 import _ from 'lodash'
 
@@ -86,41 +87,36 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, game,
         </FlipMove>
     </div>
 
-    return <div>
-
-        {!isHidden && board}
-        <div style={isActive ? ACTIVE_WRAPPER_STYLE : WRAPPER_STYLE}>
-        <div style={HEALTH_WRAPPER_STYLE}>
-            ❤
-           <div style={HEALTH_STYLE}>
-            {player.health}
+    return <div style={isActive ? ACTIVE_WRAPPER_STYLE : WRAPPER_STYLE}>
+            <div style={HEALTH_WRAPPER_STYLE}>
+                ❤
+               <div style={HEALTH_STYLE}>
+                {player.popularity}
+            </div>
+            </div>
+            <FlipMove style={{...HAND_STYLE}}>
+                {displayHand.map(n=><div key={n+' '+game.cardIndex[n].getName()} style={{position: 'relative'}}>
+                    <CardDisplay
+                        onClick={()=>onCardClick(n)}
+                        isOpponent={isHidden}
+                        isHidden={isHidden && !cardsBeingPlayed.includes(n)}
+                        card={game.cardIndex[n]}
+                        canBePlayed={isActive && !isHidden && gamestate.step === 'play' && !cardsBeingPlayed.includes(n)}
+                        canBeDiscarded={isActive && !isHidden && gamestate.step === 'draw' && !cardsBeingPlayed.includes(n)}
+                        beingPlayed={cardsBeingPlayed.includes(n)}
+                        onBoard={player.board.includes(n)}
+                    />
+                </div>)}
+            </FlipMove>
+            <CardPile
+                label="deck"
+                cards={player.deck.map(n=>isHidden ? '?' : game.cardIndex[n] )}
+            />
+            <CardPile
+                label="discard"
+                cards={player.discardPile.map(n=>game.cardIndex[n])}
+            />
         </div>
-        </div>
-        <FlipMove style={{...HAND_STYLE}}>
-            {displayHand.map(n=><div key={n+' '+game.cardIndex[n].getName()} style={{position: 'relative'}}>
-                <CardDisplay
-                    onClick={()=>onCardClick(n)}
-                    isOpponent={isHidden}
-                    isHidden={isHidden && !cardsBeingPlayed.includes(n)}
-                    card={game.cardIndex[n]}
-                    canBePlayed={isActive && !isHidden && gamestate.step === 'play' && !cardsBeingPlayed.includes(n)}
-                    canBeDiscarded={isActive && !isHidden && gamestate.step === 'draw' && !cardsBeingPlayed.includes(n)}
-                    beingPlayed={cardsBeingPlayed.includes(n)}
-                    onBoard={player.board.includes(n)}
-                />
-            </div>)}
-        </FlipMove>
-        <CardPile
-            label="deck"
-            cards={player.deck.map(n=>isHidden ? '?' : game.cardIndex[n] )}
-        />
-        <CardPile
-            label="discard"
-            cards={player.discardPile.map(n=>game.cardIndex[n])}
-        />
-    </div>
-        {isHidden && board}
-    </div>
 }
 
 const GameBoard:FunctionComponent<GameBoardProps> = (props)=>{
@@ -130,7 +126,7 @@ const GameBoard:FunctionComponent<GameBoardProps> = (props)=>{
             Step: {gamestate.step}
         </div>
         <PlayerDisplay onCardClick={()=>{}} game={game} gamestate={gamestate} player={gamestate.playerTwo} lastmove={gamestate.activePlayer === 2 ? lastmove: undefined} isActive={gamestate.activePlayer === 2} isHidden={true}/>
-
+        <DemographicDisplay gamestate={gamestate} game={game}/>
         <PlayerDisplay onCardClick={onCardClick} game={game} gamestate={gamestate} player={gamestate.playerOne} lastmove={gamestate.activePlayer === 1 ? lastmove: undefined} isActive={gamestate.activePlayer === 1} isHidden={false}/>
     </>
 }

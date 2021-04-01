@@ -61,7 +61,7 @@ class FilteredOnEventAbility<E extends TargetedEventType> extends OnEventAbility
         this.filter = filter
     }
     trigger(state:CardGameState, eventParams: EventParams<E>, ctx:ExecutionContext, game:CardGame):CardGameState{
-        if(this.filter.resolveValue(state, ctx) != eventParams.player) return state;
+        if(this.filter.resolveValue(state, ctx, game) != eventParams.player) return state;
         return super.trigger(state, eventParams, ctx, game);
     }
 }

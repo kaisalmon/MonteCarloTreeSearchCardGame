@@ -2,26 +2,22 @@ import setup from '../Components/setup';
 import {Card, ChoiceActionCard, EffectCard, ItemCard} from "../Card";
 import TextTemplate from "../Components/TextTemplate";
 
-const cardText = [
-    'Deal one damage to your opponent',
-    'Deal two damage to your opponent',
-    'Deal three damage to your opponent and deal one damage to yourself',
-    'Deal one damage to yourself then draw a card',
-    'Deal one damage to yourself then draw a card',
-    'You gain one health',
-    'You gain one health and draw a card',
-    'Your opponent discards the top card from their deck',
-    'Discard the top card from your deck, then you gain two health',
-    'Deal two damage to your opponent',
-    'Deal three damage to your opponent',
-    'Deal three damage to your opponent if they have less than ten health',
-    'If you have less than eight health, gain 3 health',
-    'If you have less than two cards in your hand, draw two cards',
-    'Draw two random cards from your discard pile',
+const cardText:string[] = [
+    'All demographics shift towards the hearts extreme',
+    'All demographics shift towards the diamonds extreme',
+    'All demographics shift away from the clubs extreme',
+    'All demographics shift towards the spades extreme',
+    'All demographics shift towards the centre',
+    'All demographics shift towards you',
+    'All demographics shift away from the center',
+    'All demographics shift away from your opponent',
+    'You shift away from your opponent',
+    'You shift towards the center and gain 3 popularity',
+    'Gain one popularity',
 ]
 
-const abilityCardText = [
-    'Whenever your opponent takes damage, if you have less than 2 cards in your hand, draw a card',
+const abilityCardText:string[] = [
+   // 'Whenever your opponent takes damage, if you have less than 2 cards in your hand, draw a card',
   //  'At the start of your turn, gain one health',
 ]
 

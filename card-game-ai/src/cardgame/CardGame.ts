@@ -11,7 +11,8 @@ import _ from 'lodash'
 export type CardGameChain = CardGameMove|CardGameMove[]
 
 export interface CardGamePlayerState {
-    readonly health: number;
+    readonly popularity: number;
+    readonly position: {readonly x: number,  readonly y: number};
     readonly hand: readonly number[];
     readonly board: readonly number[];
     readonly discardPile: readonly number[];
@@ -21,6 +22,10 @@ export interface CardGamePlayerState {
 export interface CardGameState {
     readonly activePlayer: 1|2;
     readonly step: 'draw'|'play'|'choice'
+    readonly roundsUntilElection: number;
+    readonly cardPlayedThisTurn: boolean;
+    readonly endRoundAfterThisTurn: boolean;
+    readonly demographics: readonly {x:number, y:number}[]
     readonly playerOne: CardGamePlayerState
     readonly playerTwo: CardGamePlayerState;
     readonly cardBeingPlayed?:number,
@@ -50,9 +55,9 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
 
     applyMove(state: CardGameState, move: CardGameMove): CardGameState {
         if(move.type === "end"){
-            return this.applyEndMove(state);
+            return this.onTurnEnd(state);
         }else if(move.type === "play"){
-            return this.applyCardPlay(state, move.cardNumber)
+            return this.applyCardPlay(state, move.cardNumber);
         }else if(move.type === "discard"){
             return this.applyCardDiscard(state, move.cardNumber)
         }else if(move.type === "choice"){
@@ -67,23 +72,45 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
             if(!this.cardIndex[cardNumber]){
                throw new Error("Can't find card "+cardNumber)
             }
-            const {effect} = (this.cardIndex[cardNumber] as EffectCard)
+            const {effect} = (this.cardIndex[cardNumber] as EffectCard);
             if(effect?.constructor.name !== "ConditionalEffect") {
                 return true;
             }
             const {condition} = (effect as ConditionalEffect)
             const playerKey = state.activePlayer === 1 ? 'playerOne' : 'playerTwo';
-            return condition.resolveValue(state,{playerKey})
+            return condition.resolveValue(state,{playerKey}, this)
         })
     }
 
+    getDemographicVote(state:CardGameState, pos:{x:number, y:number}):1|2|undefined{
+        const bPop = state.playerOne.popularity;
+        const rPop = state.playerTwo.popularity;
+
+        const bdistSquared = Math.pow(state.playerOne.position.x - pos.x, 2) +  Math.pow(state.playerOne.position.y - pos.y, 2)
+        const rdistSquared = Math.pow(state.playerTwo.position.x - pos.x, 2) +  Math.pow(state.playerTwo.position.y - pos.y, 2)
+        const rScore =  rPop/100.0 - rdistSquared;
+        const bScore =  bPop/100.0 -  bdistSquared;
+
+        if(bScore > rScore && bScore > 0.0) return 1;
+        if(rScore > bScore && rScore > 0.0) return 2;
+        return undefined;
+    }
+
+    getVotes(state:CardGameState):{1:number, 2:number}{
+        const votes =  _.chain(state.demographics)
+            .map(pos=>this.getDemographicVote(state, pos))
+            .filter(_.identity)
+            .countBy()
+            .value() as {1:number, 2:number}
+        return votes;
+    }
+
     getStatus(state: CardGameState): GameStatus {
-        const p1Dead =  state.playerOne.health <= 0;
-        const p2Dead =  state.playerTwo.health <= 0;
-        if(p1Dead && p2Dead) return GameStatus.DRAW;
-        if(p1Dead) return GameStatus.LOSE;
-        if(p2Dead) return GameStatus.WIN;
-        return GameStatus.IN_PLAY;
+        if(state.roundsUntilElection != 0) return GameStatus.IN_PLAY;
+        const votes = this.getVotes(state);
+        if(votes[1] > votes[2]) return GameStatus.WIN;
+        if(votes[1] < votes[2]) return GameStatus.LOSE;
+        return GameStatus.DRAW;
     }
 
     getValidMoves(state: CardGameState): (CardGameChain)[] {
@@ -100,19 +127,25 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
     newGame(): CardGameState {
         const newPlayer = {
             hand:[],
-            health: 25,
+            popularity: 10,
             discardPile:[],
             board:[]
         }
         const preGame:CardGameState = {
             activePlayer: 1,
+            roundsUntilElection: 1,
+            demographics: new Array(50).fill(0).map(()=>({x:(Math.random()+Math.random())-1, y:Math.random()+Math.random()-1})),
+            endRoundAfterThisTurn: false,
+            cardPlayedThisTurn: false,
             step: 'play',
             playerOne:{
                 deck: this.deckOne,
+                position:{x:0.5, y:0},
                 ...newPlayer
             },
             playerTwo:{
                 deck: this.deckTwo,
+                position:{x:-0.5, y:0},
                 ...newPlayer
             }
         };
@@ -169,23 +202,19 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         return activePlayer.hand.map(cardNumber=>({type:"discard", cardNumber}))
     }
 
-    private applyEndMove(state: CardGameState):CardGameState {
+    private onTurnEnd(state: CardGameState):CardGameState {
         const activePlayer = state.activePlayer === 1 ? 2 : 1;
         const playerKey = activePlayer  === 1 ? 'playerOne' : 'playerTwo';
-        const newState:CardGameState =  {
-            ...state,
+        const roundEnding = state.endRoundAfterThisTurn;
+        const afterRoundUpdateState =  roundEnding ? this.onRoundEnd(state) : state;
+        const afterTurnEndState:CardGameState =  {
+            ...afterRoundUpdateState,
             step: 'play',
+            cardPlayedThisTurn: false,
+            endRoundAfterThisTurn: !state.cardPlayedThisTurn && !roundEnding,
             activePlayer,
         }
-        const postEventsState = this.processEvent(newState, 'turn_start',{player:playerKey})
-        try{
-            return new DrawCardEffect(resolveActivePlayer, 1).applyEffect(postEventsState,{playerKey}, this)
-        }catch(e){
-            if(Fizzle.isFizzle(e)){
-                return e.returnState
-            }
-            throw e;
-        }
+        return this.processEvent(afterTurnEndState, 'turn_start',{player:playerKey})
     }
 
     private applyCardPlay(state: CardGameState, cardNumber: number):CardGameState {
@@ -211,8 +240,9 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
     }
 
     getHeuristic(state: CardGameState):number {
-        const bluePoints = Math.max(0, state.playerOne.health * state.playerOne.deck.length * (1+state.playerOne.hand.length))
-        const redPoints = Math.max(0, state.playerTwo.health* state.playerTwo.deck.length * (1+state.playerTwo.hand.length))
+        const votes = this.getVotes(state)
+        const bluePoints = votes[1]
+        const redPoints = votes[2]
         if(bluePoints === redPoints) return 0;
         return (bluePoints-redPoints)/(redPoints+bluePoints)
     }
@@ -264,5 +294,21 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
             step: 'play',
             cardBeingPlayed: undefined
         }
+    }
+
+    private onRoundEnd(state: CardGameState):CardGameState {
+        const updatePlayer = (player:CardGamePlayerState) => ({
+            ...player,
+            hand: []
+        })
+        const newState = {
+            ...state,
+            endRoundIfNoCardPlayedThisTurn: false,
+            roundsUntilElection: state.roundsUntilElection - 1,
+            playerOne: updatePlayer(state.playerOne),
+            playerTwo: updatePlayer(state.playerTwo),
+        }
+        const drawEffect = new DrawCardEffect(resolveActivePlayer, 6)
+        return drawEffect.applyEffectNoThrow(drawEffect.applyEffectNoThrow(newState, {playerKey:'playerTwo'}, this), {playerKey:'playerOne'}, this);
     }
 }

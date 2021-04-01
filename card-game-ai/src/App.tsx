@@ -86,7 +86,7 @@ function App() {
             })
           }}
       >
-         End Turn
+          {combinedGameState.state.endRoundAfterThisTurn ? 'End Round' : 'End Turn'}
       </button>
 
         <div>

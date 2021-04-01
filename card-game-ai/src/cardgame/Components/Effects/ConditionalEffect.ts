@@ -3,15 +3,16 @@ import CardGame, {CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 import {hasTarget, resolvePlayerContextually} from "../setup";
 
-export class ConditionalEffect implements Effect{
+export class ConditionalEffect extends Effect{
     eff:Effect;
     condition:Resolver<boolean>;
     constructor(eff:Effect, condition:Resolver<boolean>) {
+        super();
         this.eff = eff;
         this.condition = condition;
     }
     applyEffect(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
-        if(this.condition.resolveValue(state, ctx)){
+        if(this.condition.resolveValue(state, ctx, game)){
             return this.eff.applyEffect(state, ctx, game);
         }
         return state;

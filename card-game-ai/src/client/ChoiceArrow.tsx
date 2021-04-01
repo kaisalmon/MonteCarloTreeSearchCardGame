@@ -3,7 +3,7 @@ import React, {CSSProperties, useEffect} from 'react'
 const ARROW_STYLE:CSSProperties= {
     boxSizing: 'border-box',
     position:'absolute',
-    background: 'red',
+    background: 'orange',
     width: 14,
     zIndex: 1,
     left: 10,
@@ -20,7 +20,7 @@ const HEAD_STYLE:CSSProperties= {
     top: 10,
     borderLeft: '20px solid transparent',
     borderRight: '20px solid transparent',
-    borderTop: '20px solid red',
+    borderTop: '20px solid orange',
     cursor: 'none'
 }
 

@@ -5,12 +5,14 @@ import {EventParams, EventType} from "./Abilities/OnEventAbility";
 
 type Component = ResolveSlot<any>
 type GetSlot<T extends Component> = T extends ResolveSlot<infer R> ? R : any;
-type Slot = 'Eff'|'Player'|'N'|'Cond'|'Ability'|'ChoiceAction'
+type Slot = 'Eff'|'Player'|'N'|'Cond'|'Ability'|'ChoiceAction'|'Demos'|'Position'
 type ResolveSlot<SLOT extends Slot> = SLOT extends 'Eff' ? Effect
                                     : SLOT extends 'Ability' ? Ability
                                     : SLOT extends 'Player' ? PlayerTarget
                                     : SLOT extends 'ChoiceAction' ? ChoiceAction
                                     : SLOT extends 'Cond' ? Resolver<boolean>
+                                    : SLOT extends 'Demos' ? Resolver<number[]>
+                                    : SLOT extends 'Position' ? Resolver<{x:number, y:number}>
                                     : SLOT extends 'N' ? number
                                     : never;
 
@@ -26,7 +28,17 @@ type EventContext<E extends EventType> = {
 }
 
 export type Resolver<T> = {
-   resolveValue(state:CardGameState, ctx:ExecutionContext):T;
+   resolveValue(state:CardGameState, ctx:ExecutionContext, game:CardGame):T;
+}
+
+export class ResolveConstant<T>{
+  value:T;
+  constructor(value:T) {
+    this.value = value;
+  }
+    resolveValue(state:CardGameState, ctx:ExecutionContext, game:CardGame){
+      return this.value;
+    }
 }
 
 export type PlayerTarget = Resolver<PlayerKey>
@@ -40,8 +52,16 @@ export interface ChoiceAction {
   applyEffect(move:CardGameChoiceMove, state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState;
 }
 
-export interface Effect{
-  applyEffect(state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState;
+export abstract class Effect{
+  abstract applyEffect(state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState;
+  applyEffectNoThrow(state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState{
+     try{
+        return this.applyEffect(state, executionContext, game);
+    }catch(e){
+        if(!Fizzle.isFizzle(e))throw e;
+        return e.returnState;
+    }
+  }
 }
 
 export default class TextTemplate<T extends Component, ARGS extends Component[]=Component[]>{
@@ -58,7 +78,9 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]=
     N:[],
     Cond:[],
     ChoiceAction:[],
-    Ability:[]
+    Ability:[],
+    Demos:[],
+    Position:[],
   }
 
   constructor(slot: GetSlot<T>, template:string, factory:(...args:ARGS)=>T){
@@ -116,6 +138,8 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]=
       N:[],
       Cond:[],
       Ability:[],
+      Demos:[],
+      Position:[],
     }
   }
 }

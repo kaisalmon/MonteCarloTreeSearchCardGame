@@ -7,12 +7,13 @@ type KeysMatching<T, V> = {[K in keyof T]-?: T[K] extends V ? K : never}[keyof T
 export type CardSource = KeysMatching<CardGamePlayerState, readonly number[]>;
 export type CardDest = KeysMatching<CardGamePlayerState, readonly number[]>;
 
-class RandomTransferEffect implements Effect{
+class RandomTransferEffect extends Effect{
     target:PlayerTarget
     from:CardSource
     to:CardDest
     n: number;
     constructor(target:PlayerTarget, from:CardSource, to:CardDest, n:number) {
+        super();
         this.target = target;
         this.from = from;
         this.to = to;
@@ -27,17 +28,11 @@ class RandomTransferEffect implements Effect{
         return s;
     }
     transfer(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
-        const targetKey = this.target.resolveValue(state, ctx);
+        const targetKey = this.target.resolveValue(state, ctx, game);
         const player = state[targetKey];
         const fromPile = [...player[this.from]];
         const toPile = [...player[this.to]];
         if(fromPile.length === 0 || (this.to === 'hand' && toPile.length > CardGame.MAX_HAND_SIZE)){
-            if(this.to === 'hand'){
-                throw new Fizzle({...state, [targetKey]:{
-                ...state[targetKey],
-                    health: state[targetKey].health - 1
-                }});
-            }
             throw new Fizzle(state);
         }
         const drawIndex = Math.floor(Math.random() * fromPile.length);
@@ -58,7 +53,7 @@ export class DrawCardEffect extends RandomTransferEffect{
     }
     transfer(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
         const s = super.transfer(state, ctx, game);
-        const targetKey = this.target.resolveValue(state, ctx);
+        const targetKey = this.target.resolveValue(state, ctx, game);
         if(!game)debugger
         return game.processEvent(s, 'player_draws', {
             player: targetKey,
@@ -68,8 +63,10 @@ export class DrawCardEffect extends RandomTransferEffect{
     }
 }
 
+
 export default function setup(){
     new TextTemplate('Eff', '%Player draws? %N cards?', (target:PlayerTarget, n:number)=>new DrawCardEffect(target, n));
+    new TextTemplate('Eff', '%Player draws? up to %N cards?', (target:PlayerTarget, n:number)=>new DrawCardEffect(target, n));
     new TextTemplate('Eff', '%Player discards? %N random cards?(?: from your hand)', (target:PlayerTarget, n:number)=>new RandomTransferEffect(target, 'hand','discardPile', n));
     new TextTemplate('Eff', '%Player discards? the top card (?:from|of) (?:their|your) deck', (target:PlayerTarget)=>new RandomTransferEffect(target, 'deck','discardPile', 1));
     new TextTemplate('Eff', '%Player discards? %N cards? from the top of (?:their|your) deck', (target:PlayerTarget, n:number)=>new RandomTransferEffect(target, 'deck','discardPile', n));

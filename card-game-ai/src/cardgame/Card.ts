@@ -30,6 +30,8 @@ export abstract class Card{
     protected postEffect(state:CardGameState, playerKey:PlayerKey):CardGameState{
         return {
             ...state,
+            cardPlayedThisTurn: true,
+            endRoundAfterThisTurn: false,
             [playerKey]: {
                 ...state[playerKey],
                 discardPile: [this.cardNumber, ...state[playerKey].discardPile]
@@ -134,6 +136,8 @@ export class ItemCard extends Card{
     protected postEffect(state:CardGameState, playerKey:PlayerKey):CardGameState{
         return {
             ...state,
+            cardPlayedThisTurn: true,
+            endRoundAfterThisTurn: false,
             [playerKey]: {
                 ...state[playerKey],
                 board: [this.cardNumber, ...state[playerKey].board]

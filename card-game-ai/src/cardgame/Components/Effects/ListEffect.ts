@@ -2,10 +2,11 @@ import TextTemplate, {Effect, ExecutionContext} from "../TextTemplate";
 import CardGame, {CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 
-class ListEffect implements Effect{
+class ListEffect extends Effect{
     a:Effect;
     b:Effect;
     constructor(a:Effect, b:Effect) {
+        super();
         this.a = a;
         this.b = b;
     }

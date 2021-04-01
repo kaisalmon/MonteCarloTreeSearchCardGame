@@ -1,6 +1,6 @@
 import setupList from './Effects/ListEffect';
 import setupDraw from './Effects/RandomTransferEffect';
-import setupDamage from './Effects/ChangeHealthEffect';
+import setupDamage from './Effects/ChangePlayerValue';
 import setupConditional from './Effects/ConditionalEffect'
 import setupLessThan from './GameConditions/PlayerLessThanCondition'
 import {setup as setupEventAbilities} from './Abilities/OnEventAbility'
@@ -8,6 +8,8 @@ import TextTemplate, {PlayerTarget} from "./TextTemplate";
 import {PlayerKey} from "../Card";
 import numberToWords from 'number-to-words';
 import {setupChooseAPlayer} from "./ChoiceActions/ChooseAPlayer";
+import {setupMoveDemographics} from './Effects/MoveDemographicEffect'
+import {setupMovePlayer} from "./Effects/MovePlayerEffect";
 
 export interface HasTarget{
     target: PlayerTarget;
@@ -45,10 +47,13 @@ export default function () {
     }
     new TextTemplate('Player','yourself',()=>resolveActivePlayer)
     new TextTemplate('Player','you',()=>resolveActivePlayer)
+    new TextTemplate('Player','your',()=>resolveActivePlayer)
     new TextTemplate('Player','your opponent',()=>resolveOpponent)
+    new TextTemplate('Player','your opponent\'?s',()=>resolveOpponent)
     new TextTemplate('Player','the other player',()=>resolveOpponent)
     new TextTemplate('Player','they',()=>resolvePlayerContextually)
     new TextTemplate('Player','them',()=>resolvePlayerContextually)
+    new TextTemplate('Player','their',()=>resolvePlayerContextually)
     new TextTemplate('Player','that player',()=>resolvePlayerContextually)
     new TextTemplate('Player','',()=>resolvePlayerContextually)
     setupList();
@@ -57,5 +62,7 @@ export default function () {
     setupConditional();
     setupLessThan();
     setupEventAbilities();
+    setupMoveDemographics();
     setupChooseAPlayer();
+    setupMovePlayer();
 }

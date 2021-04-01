@@ -1,5 +1,5 @@
 import TextTemplate, {Effect, ExecutionContext, PlayerTarget, Resolver} from "../TextTemplate";
-import {CardGamePlayerState, CardGameState} from "../../CardGame";
+import CardGame, {CardGamePlayerState, CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 
 export class PlayerLessThanCondition implements Resolver<boolean>{
@@ -11,8 +11,8 @@ export class PlayerLessThanCondition implements Resolver<boolean>{
         this.n = n;
         this.mapping = mapping;
     }
-    resolveValue(state: CardGameState, ctx: ExecutionContext){
-        const targetKey = this.target.resolveValue(state, ctx);
+    resolveValue(state: CardGameState, ctx: ExecutionContext, game:CardGame){
+        const targetKey = this.target.resolveValue(state, ctx, game);
         const player = state[targetKey];
         return this.mapping(player) < this.n;
     }
@@ -26,7 +26,7 @@ export default function setup(){
     );
     new TextTemplate(
         'Cond',
-        '%Player\\s?(?:has|have) less than %N health',
-        (target:PlayerTarget, n:number) => new PlayerLessThanCondition(target, n, player=>player.health)
+        '%Player\\s?(?:has|have) less than %N popularity',
+        (target:PlayerTarget, n:number) => new PlayerLessThanCondition(target, n, player=>player.popularity)
     );
 }
