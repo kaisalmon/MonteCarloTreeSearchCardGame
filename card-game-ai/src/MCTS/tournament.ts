@@ -21,21 +21,21 @@ type TournamentSettings<G extends Game<any, any>> = {
     moveAnalysis: boolean,
 }
 
-type MoveSituationSummary = {
+type MoveSituationRecord = {
     timesChosen:number,
     timesPassedOver:number,
 }
-type MoveSummary = {
-    win:MoveSituationSummary,
-    lose:MoveSituationSummary,
-    total:MoveSituationSummary,
+type MoveRecord = {
+    win:MoveSituationRecord,
+    lose:MoveSituationRecord,
+    total:MoveSituationRecord,
 }
 
 type TournamentResults = {
     matchUpWins:Record<string, Record<string, number>>,
     summary: Record<GameStatus, number>
     strategiesSummaries: Record<string, StrategySummary>
-    moveSummary: Record<string, MoveSummary>
+    moveSummary: Record<string, MoveRecord>
 }
 
 type StrategySummary = {
@@ -51,8 +51,8 @@ type MatchUpResult<G> = {
     red_t: number,
     length: number,
     state: StateFromGame<G>,
-    blueMoves: Record<string, MoveSituationSummary>,
-    redMoves:  Record<string, MoveSituationSummary>
+    blueMoves: Record<string, MoveSituationRecord>,
+    redMoves:  Record<string, MoveSituationRecord>
 }
 
 export function runTournament<G extends Game<any, any>>(settings:TournamentSettings<G>):TournamentResults{
@@ -142,9 +142,9 @@ export function runTournament<G extends Game<any, any>>(settings:TournamentSetti
     };
 }
 
-function updateSituationalMoveSummary<T extends Record<string, unknown>>(move: T[] | T, validMoves: (T[] | T)[], prev: Record<string, MoveSituationSummary>):Record<string, MoveSituationSummary> {
+function updateSituationalMoveSummary<T extends Record<string, unknown>>(move: T[] | T, validMoves: (T[] | T)[], prev: Record<string, MoveSituationRecord>):Record<string, MoveSituationRecord> {
     const moveKey = JSON.stringify(Array.isArray(move) ? move[0] : move)
-    const prevRecord:MoveSituationSummary = prev[moveKey] || {
+    const prevRecord:MoveSituationRecord = prev[moveKey] || {
         timesChosen: 0,
         timesPassedOver: 0
     }
@@ -157,7 +157,7 @@ function updateSituationalMoveSummary<T extends Record<string, unknown>>(move: T
         .filter(key => key != moveKey)
         .keyBy(_.identity)
         .mapValues(key=> {
-            const prevPassOverRecord: MoveSituationSummary = prev[key] || {
+            const prevPassOverRecord: MoveSituationRecord = prev[key] || {
                 timesChosen: 0,
                 timesPassedOver: 0
             }
@@ -180,7 +180,7 @@ function runMatch<G extends Game<any, any>>(
     blueStratName: string,
     redStratName: string
 ):MatchUpResult<G>{
-    const {game, strategies, enableMirrorMatches, maxGameLength, gamesPerMatchUp, onGameEnd} = settings;
+    const {game, strategies, maxGameLength} = settings;
     let moves = 0;
     let state:StateFromGame<typeof game> = game.newGame()
     const blueStrat = strategies[blueStratName];
@@ -234,12 +234,11 @@ function main(){
     const settings:TournamentSettings<typeof game> = {
         game,
         strategies:{
-            /*
             'Basic AI': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(),
             'True Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(true),
-            'MCTS Shallow': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(5,1, heuristic),
-            'MCTS Medium': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(30,30, heuristic),
-            */
+            'MCTS Greedy': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(5,1, heuristic, new RandomStrategy(true)),
+            'MCTS Medium': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(30,30, heuristic, new RandomStrategy(true)),
+            /*
             'MCTS High Level': (()=>{
                 const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(270, 100, heuristic);
                 s.useCache = true;
@@ -248,6 +247,15 @@ function main(){
                 s.pruningPeriod = 3;
                 return s;
             })(),
+            */
+            'MCTS High Level w/ True random': (()=>{
+                const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(400, 100, heuristic, new RandomStrategy(true));
+                s.useCache = true;
+                s.usePruning = true;
+                s.pruningPeriod = 3;
+                return s;
+            })(),
+            /*
             'MCTS Super High Level': (()=>{
                 const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(800, 100, heuristic);
                 s.useCache = true;
@@ -256,7 +264,6 @@ function main(){
                 s.pruningPeriod = 3;
                 return s;
             })(),
-            /*
            'MCTS Nested': (()=>{
                 const s =  new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(10, 90, heuristic,   new MCTSStrategy(1,1, heuristic));
                 s.useCache = true;
@@ -268,9 +275,9 @@ function main(){
 
              */
         },
-        enableMirrorMatches: true,
+        enableMirrorMatches: false,
         maxGameLength: 200,
-        gamesPerMatchUp: 5,
+        gamesPerMatchUp: 10,
         eloConstant: 30,
         moveAnalysis: true,
         onGameEnd: ()=>{bar1.update(++count)}

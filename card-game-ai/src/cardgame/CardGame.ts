@@ -2,7 +2,7 @@ import {Game, GameStatus} from "../MCTS/mcts";
 import chalk from 'chalk'
 import {Card, ChoiceActionCard, EffectCard, ItemCard, PlayerKey} from "./Card";
 import {DrawCardEffect} from "./Components/Effects/RandomTransferEffect";
-import {resolveActivePlayer} from "./Components/setup";
+import {resolveActivePlayer, resolveOpponent} from "./Components/setup";
 import {ChoiceAction, Fizzle} from "./Components/TextTemplate";
 import {ConditionalEffect} from "./Components/Effects/ConditionalEffect";
 import {EventParams, EventType, OnEventAbility} from "./Components/Abilities/OnEventAbility";
@@ -219,8 +219,10 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         const playerKey = activePlayer  === 1 ? 'playerOne' : 'playerTwo';
         const roundEnding = state.endRoundAfterThisTurn;
         const afterRoundUpdateState =  roundEnding ? this.onRoundEnd(state) : state;
+        const drawEffect = new DrawCardEffect(resolveOpponent,1);
+        const afterDraw =  !roundEnding && !state.cardPlayedThisTurn ? drawEffect.applyEffect(afterRoundUpdateState, {playerKey}, this) : afterRoundUpdateState;
         const afterTurnEndState:CardGameState =  {
-            ...afterRoundUpdateState,
+            ...afterDraw,
             step: 'play',
             cardPlayedThisTurn: false,
             isFirstTurn: false,
