@@ -47,6 +47,7 @@ function App() {
                 const newState = game.applyMoveChain(combinedGameState.state, move);
                 setMood(mood)
                 setIsLoading(false)
+                setPreviewState(undefined)
                 setCombinedGameState({
                     state:newState,
                     lastMove: Array.isArray(move) ? move[0] : move

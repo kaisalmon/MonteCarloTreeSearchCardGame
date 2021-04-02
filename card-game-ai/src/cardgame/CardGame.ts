@@ -321,6 +321,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
             playerOne: updatePlayer(state.playerOne),
             playerTwo: updatePlayer(state.playerTwo),
         }
+        if(state.roundsUntilElection === 1) return newState;
         const drawEffect = new DrawCardEffect(resolveActivePlayer, 6)
         return drawEffect.applyEffectNoThrow(drawEffect.applyEffectNoThrow(newState, {playerKey:'playerTwo'}, this), {playerKey:'playerOne'}, this);
     }
