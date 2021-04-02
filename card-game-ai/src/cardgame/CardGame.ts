@@ -45,7 +45,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
     cardIndex:Record<number, Card>;
     deckOne:number[];
     deckTwo:number[];
-    static MAX_HAND_SIZE: number = 6;
+    static STARTING_HAND_SIZE: number = 6;
 
     constructor(cardIndex:Record<number,Card>, deckOne?:number[], deckTwo?:number[]){
         super();
@@ -160,8 +160,8 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
                 ...newPlayer
             }
         };
-        const blueDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.MAX_HAND_SIZE - 1);
-        const redDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.MAX_HAND_SIZE);
+        const blueDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.STARTING_HAND_SIZE - 1);
+        const redDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.STARTING_HAND_SIZE);
         const p1Draw =  blueDrawCardsEffect.applyEffect(preGame,{playerKey: "playerOne"}, this);
         return redDrawCardsEffect.applyEffect(p1Draw,{playerKey: "playerTwo"}, this);
     }
@@ -243,7 +243,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         discardPile.push(...hand.splice(hand.indexOf(cardNumber), 1))
         return {
             ...state,
-            step: hand.length > CardGame.MAX_HAND_SIZE ? 'draw' :'play',
+            step: hand.length > CardGame.STARTING_HAND_SIZE ? 'draw' :'play',
             [playerKey]:{
                 ...player,
                 hand,

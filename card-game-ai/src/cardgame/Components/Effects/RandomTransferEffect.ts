@@ -32,7 +32,7 @@ class RandomTransferEffect extends Effect{
         const player = state[targetKey];
         const fromPile = [...player[this.from]];
         const toPile = [...player[this.to]];
-        if(fromPile.length === 0 || (this.to === 'hand' && toPile.length > CardGame.MAX_HAND_SIZE)){
+        if(fromPile.length === 0 ){
             throw new Fizzle(state);
         }
         const drawIndex = Math.floor(Math.random() * fromPile.length);
