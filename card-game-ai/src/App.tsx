@@ -42,7 +42,7 @@ function App() {
         const loop = async ()=>{
             if(combinedGameState.state.activePlayer === 2 && !isLoading && game.getStatus(combinedGameState.state) === GameStatus.IN_PLAY){
                 setIsLoading(true)
-                const delay_time = (combinedGameState.lastMove as CardGameMove)?.type === 'end' ? 400 : 1000;
+                const delay_time = (combinedGameState.lastMove as CardGameMove)?.type === 'end' ? 1000 : 1500;
                 const [{mood, move}]:[WorkerResponse, void] = await Promise.all([worker.processData(combinedGameState.state), delay(delay_time)])
                 const newState = game.applyMoveChain(combinedGameState.state, move);
                 setMood(mood)

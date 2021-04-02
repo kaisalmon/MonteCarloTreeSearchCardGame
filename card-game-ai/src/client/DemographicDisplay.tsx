@@ -182,15 +182,18 @@ class AnimatedBackground extends React.Component<BackgroundProps> {
 type VoteBarsProps = {
     redVotes: number,
     blueVotes:number,
+    style?:CSSProperties,
 }
-const VoteBars = ({redVotes, blueVotes}:VoteBarsProps)=><div style={{display: 'flex', width: 200}}>
-    <div style={{flexGrow:blueVotes, background:'blue', ...VOTES_BAR_STYLE}}>{Math.round(blueVotes)}</div>
-    <div style={{flexGrow:redVotes, background:'red', ...VOTES_BAR_STYLE}}>{Math.round(redVotes)}</div>
-</div>
+const VoteBars = ({redVotes, blueVotes, style}:VoteBarsProps)=>
+    <div style={{display: 'flex', width: 200, ...style}}>
+        <div style={{flexGrow:blueVotes, background:'blue', ...VOTES_BAR_STYLE}}>{Math.round(blueVotes)}</div>
+        <div style={{flexGrow:redVotes, background:'red', ...VOTES_BAR_STYLE}}>{Math.round(redVotes)}</div>
+    </div>
 
 const DemographicDisplay:React.FunctionComponent<DemographicDisplayProps> = props=>{
-    const {gamestate:{playerOne, playerTwo}, onChoiceClick, game} = props;
+    const {gamestate:{playerOne, playerTwo},previewState, onChoiceClick, game} = props;
     const votes = props.game.getVotes(props.gamestate);
+    const previewVotes = previewState ? props.game.getVotes(previewState) : votes;
     const isChoosingPlayer = game.getActiveActionChoice(props.gamestate)?.constructor === ChooseAPlayer;
     const isChoosingExtreme = game.getActiveActionChoice(props.gamestate)?.constructor === ChooseAnExtreme;
 
@@ -324,6 +327,16 @@ const DemographicDisplay:React.FunctionComponent<DemographicDisplayProps> = prop
                     propList={['blueVotes', 'redVotes']}
                     blueVotes={votes[1]||0}
                     redVotes={votes[2]||0}
+                />
+                <TransitionProps
+                    style={{
+                        opacity: previewState ? .4 : 0,
+                        transition: 'opacity 0.4s'
+                    }}
+                    component={VoteBars}
+                    propList={['blueVotes', 'redVotes']}
+                    blueVotes={previewVotes[1]||0}
+                    redVotes={previewVotes[2]||0}
                 />
             </div>
     </div>
