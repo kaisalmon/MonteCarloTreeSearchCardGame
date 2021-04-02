@@ -1,52 +1,58 @@
 import setup from '../Components/setup';
 import {Card, ChoiceActionCard, EffectCard, ItemCard} from "../Card";
 import TextTemplate from "../Components/TextTemplate";
+import _ from 'lodash'
 
-const cardText:string[] = [
-    'All demographics shift towards the hearts extreme',
-    'All demographics shift towards the diamonds extreme',
-    'All demographics shift towards the clubs extreme',
-    'All demographics shift towards the spades extreme',
-    'You shift towards the hearts extreme. Gain one popularity',
-    'You shift towards the spades extreme. Your opponent loses one popularity',
-    'You shift towards the diamonds extreme. Draw a card',
-    'You shift towards the clubs extreme. Your opponent discards a random card',
-    'Gain three popularity',
-    'Lose two popularity, your followers shift towards you',
-    'gain three popularity, your followers shift away from you',
-]
+const cardText:Record<number, string>= {
+    1: 'All demographics shift towards the hearts extreme',
+    2: 'All demographics shift towards the diamonds extreme',
+    3: 'All demographics shift towards the clubs extreme',
+    4: 'All demographics shift towards the spades extreme',
+    5: 'You shift towards the hearts extreme. Gain one popularity',
+    6: 'You shift towards the spades extreme. Your opponent loses one popularity',
+    7: 'You shift towards the diamonds extreme. Draw a card',
+    8: 'You shift towards the clubs extreme. Your opponent discards a random card',
+    9: 'Gain two popularity',
+    10:'Lose one popularity, your followers shift towards you',
+    11:'gain one popularity, your followers shift away from you',
+    13: 'You shift towards the center',
+    14:'Your followers shift towards your opponent, then their followers shift towards you',
+    15:'Discard a random card, then shift towards your opponent',
+    16:'Shift away from your opponent, then you draw a card',
+};
 
-const abilityCardText:string[] = [
-   // 'Whenever your opponent takes damage, if you have less than 2 cards in your hand, draw a card',
-  //  'At the start of your turn, gain one health',
-]
 
-const choiceCards = [
-    'Choose a player. That player draws 2 cards and loses 3 popularity',
-    'Choose an extreme. All demographics shift towards that extreme',
-    'Choose an extreme. Shift towards that extreme',
-    'Choose an extreme. Gain one popularity and shift towards that extreme'
-]
+const choiceText:Record<number, string>= {
+    30:'Choose a player. That player draws 2 cards and loses 2 popularity',
+    31:'Choose an extreme. All demographics shift towards that extreme',
+    32:'Choose an extreme. Shift towards that extreme',
+    33:'Choose an extreme. Gain one popularity and shift towards that extreme'
+};
 
-export default function():Record<number, Card>{
+ function getExampleDeck():Record<number, Card>{
     if(Object.values(TextTemplate.templates).some(arr=>arr.length === 0)) {
         throw new Error("Text Templates not setup")
     }
-   return [
-       ...[...cardText, ...cardText].map((text, i) => {
-            const effect = TextTemplate.parse('Eff', text);
-            return new EffectCard(effect, text, `Card ${i}`, i);
-        }),
-        ...abilityCardText.map((text, i) => {
-            const ability = TextTemplate.parse('Ability', text);
-            const n = 2*cardText.length + i;
-            return new ItemCard(ability, text, `Card ${n}`, n);
-        }),
+   const effectCards = parseCards(cardText, (text,cardNumber,i)=>{
+        const effect = TextTemplate.parse('Eff', text);
+        const specificCardNumber = parseInt(cardNumber)+i/10;
+        return new EffectCard(effect, text, `Card #${cardNumber}`, specificCardNumber)
+   })
+    const choiceCards = parseCards(choiceText, (text,cardNumber,i)=>{
+        const choiceAction = TextTemplate.parse('ChoiceAction', text);
+        const specificCardNumber = parseInt(cardNumber)+i/10;
+        return new ChoiceActionCard(choiceAction, text, `Card #${cardNumber}`, specificCardNumber)
+   })
 
-        ...choiceCards.map((text, i) => {
-            const n = 2*cardText.length + abilityCardText.length +  i;
-            const choice = TextTemplate.parse('ChoiceAction', text);
-            return new ChoiceActionCard(choice, text, `Card ${n}`, n);
-        }),
-   ]
+    return {...effectCards, ...choiceCards}
 }
+
+function parseCards(texts:Record<number, string>, factory:(...args:any)=>Card):Record<number, Card>{
+     return _.chain([1,2,3])
+       .flatMap(i=> Object.entries(texts)
+           .map(([cardNumber,text])=>factory(text, cardNumber, i))
+       ).keyBy('cardNumber')
+       .value();
+}
+
+export default getExampleDeck;

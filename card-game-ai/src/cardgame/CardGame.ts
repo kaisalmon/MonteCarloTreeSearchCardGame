@@ -50,7 +50,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
     constructor(cardIndex:Record<number,Card>, deckOne?:number[], deckTwo?:number[]){
         super();
         this.cardIndex = cardIndex;
-        this.deckOne = deckOne ? deckOne : Object.keys(this.cardIndex).map(i=>parseInt(i));
+        this.deckOne = deckOne ? deckOne : Object.keys(this.cardIndex).map(i=>parseFloat(i));
         this.deckTwo = deckTwo ? deckTwo : this.deckOne;
     }
 
@@ -160,7 +160,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
                 ...newPlayer
             }
         };
-        const blueDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, 1);
+        const blueDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.MAX_HAND_SIZE - 1);
         const redDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.MAX_HAND_SIZE);
         const p1Draw =  blueDrawCardsEffect.applyEffect(preGame,{playerKey: "playerOne"}, this);
         return redDrawCardsEffect.applyEffect(p1Draw,{playerKey: "playerTwo"}, this);
