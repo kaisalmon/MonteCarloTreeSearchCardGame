@@ -12,6 +12,7 @@ export type CardGameChain = CardGameMove|CardGameMove[]
 
 export interface CardGamePlayerState {
     readonly popularity: number;
+    readonly capital: number;
     readonly position: {readonly x: number,  readonly y: number};
     readonly hand: readonly number[];
     readonly board: readonly number[];
@@ -137,7 +138,8 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         const newPlayer = {
             hand:[],
             discardPile:[],
-            board:[]
+            board:[],
+            capital: 3,
         }
         const preGame:CardGameState = {
             activePlayer: 1,
@@ -193,7 +195,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         };
     }
 
-    private getCardMoves(state: CardGameState):(CardGamePlayCardMove|[CardGamePlayCardMove,CardGameChoiceMove])[] {
+     getCardMoves(state: CardGameState):(CardGamePlayCardMove|[CardGamePlayCardMove,CardGameChoiceMove])[] {
         if(state.step != 'play') return [];
         const playerKey = state.activePlayer === 1 ? 'playerOne' : 'playerTwo';
         const activePlayer = state[playerKey];
@@ -220,7 +222,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         const roundEnding = state.endRoundAfterThisTurn;
         const afterRoundUpdateState =  roundEnding ? this.onRoundEnd(state) : state;
         const drawEffect = new DrawCardEffect(resolveOpponent,1);
-        const afterDraw =  !roundEnding && !state.cardPlayedThisTurn ? drawEffect.applyEffect(afterRoundUpdateState, {playerKey}, this) : afterRoundUpdateState;
+        const afterDraw =  !roundEnding && !state.cardPlayedThisTurn ? drawEffect.applyEffectNoThrow(afterRoundUpdateState, {playerKey}, this) : afterRoundUpdateState;
         const afterTurnEndState:CardGameState =  {
             ...afterDraw,
             step: 'play',
@@ -256,8 +258,8 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
 
     getHeuristic(state: CardGameState):number {
         const votes = this.getVotes(state)
-        const bluePoints = votes[1]
-        const redPoints = votes[2]
+        const bluePoints = votes[1] + 2 * state.playerOne.capital + 0.1 * state.playerOne.hand.length;
+        const redPoints = votes[2] + 2 * state.playerOne.capital + 0.1 * state.playerOne.hand.length;
         if(bluePoints === redPoints) return 0;
         return (bluePoints-redPoints)/(redPoints+bluePoints)
     }
@@ -314,6 +316,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
     private onRoundEnd(state: CardGameState):CardGameState {
         const updatePlayer = (player:CardGamePlayerState) => ({
             ...player,
+            capital: player.capital + 1,
             hand: []
         })
         const newState = {

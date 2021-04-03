@@ -48,13 +48,13 @@ const HAND_STYLE = {
     justifyContent:'center'
 }
 const HEALTH_WRAPPER_STYLE:CSSProperties = {
-    fontSize: 60,
+    fontSize: 80,
     position: "relative",
 }
 const HEALTH_STYLE:CSSProperties = {
     position: "absolute",
-    bottom:25,
-    left: 18,
+    bottom:40,
+    left: 25,
     width: 20,
     fontSize: 16,
     color: "white",
@@ -79,6 +79,8 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, setPr
         <FlipMove style={{...PLAYER_BOARD_STYLE}}>
             {player.board.map(n=><div key={n+' '+game.cardIndex[n].getName()}>
                 <CardDisplay
+                    gamestate={gamestate}
+                    game={game}
                     onClick={()=>{}}
                     setPreview={()=>{}}
                     isOpponent={isHidden}
@@ -95,14 +97,22 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, setPr
 
     return <div style={isActive ? ACTIVE_WRAPPER_STYLE : WRAPPER_STYLE}>
             <div style={HEALTH_WRAPPER_STYLE}>
-                ❤
-               <div style={HEALTH_STYLE}>
-                {player.popularity}
+                🟆
+                <div style={HEALTH_STYLE}>
+                    {player.capital}
+                </div>
             </div>
+            <div style={HEALTH_WRAPPER_STYLE}>
+                🟊
+                <div style={HEALTH_STYLE}>
+                    {player.popularity}
+                </div>
             </div>
             <FlipMove style={{...HAND_STYLE}}>
                 {displayHand.map(n=><div key={n+' '+game.cardIndex[n].getName()} style={{position: 'relative'}}>
                     <CardDisplay
+                        gamestate={gamestate}
+                        game={game}
                         onClick={()=>onCardClick(n)}
                         setPreview={setPreview}
                         isOpponent={isHidden}

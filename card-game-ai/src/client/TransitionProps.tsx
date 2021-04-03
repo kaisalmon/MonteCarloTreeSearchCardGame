@@ -25,11 +25,11 @@ function TransitionProps<X extends Record<string, unknown>>({
           if(Math.abs(diff)>0.005){
               requiresUpdate=true;
           }
-        const newValue = currentValue + diff/5;
+        const newValue = currentValue + diff/4;
         newVisibleProps[key] = newValue;
       }
       if(requiresUpdate) setVisibleProps(newVisibleProps);
-    },100);
+    },60);
   }, [rest, visibleProps]);
 
   return component({...rest as any, ...visibleProps});

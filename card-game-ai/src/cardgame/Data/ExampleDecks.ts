@@ -26,7 +26,8 @@ const choiceText:Record<number, string>= {
     30:'Choose a player. That player draws 2 cards and loses 2 popularity',
     31:'Choose an extreme. All demographics shift towards that extreme',
     32:'Choose an extreme. Shift towards that extreme',
-    33:'Choose an extreme. Gain one popularity and shift towards that extreme'
+    33:'Choose an extreme. Gain one popularity and shift towards that extreme',
+    //34:'Choose one: all demographics shift towards the spades extreme or gain one political capital'
 };
 
  function getExampleDeck():Record<number, Card>{

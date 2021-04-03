@@ -20,7 +20,6 @@ export abstract class Game<STATE extends GameState, T>{
     abstract newGame():STATE;
     abstract getValidMoves(state:STATE):(T|T[])[];
     abstract print(state:STATE):void;
-   abstract getSensibleMoves(state:STATE):(T|T[])[];
      abstract randomizeHiddenInfo(state:STATE):STATE;
      abstract applyMove(state:STATE, move:T):STATE;
     abstract getStatus(state:STATE):GameStatus;
@@ -55,13 +54,6 @@ export class RandomStrategy<STATE extends GameState, T> implements Strategy<STAT
     }
 
     pickMove(game:Game<STATE, T>, state: STATE): T|T[] {
-        const sensibleMove = !this.trueRandom && _.sample(game.getSensibleMoves(state))
-        if (sensibleMove){
-            this.mood = "Sensible"
-            return sensibleMove;
-        }else{
-            this.mood = "Not Sensible"
-        }
         const validMove = _.sample(game.getValidMoves(state))
         if (validMove) {
             return validMove;

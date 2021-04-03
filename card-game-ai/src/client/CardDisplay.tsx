@@ -2,13 +2,16 @@ import React, {CSSProperties, FunctionComponent} from "react";
 import {Card, ChoiceActionCard} from "../cardgame/Card";
 import ChoiceArrow from "./ChoiceArrow";
 import ReactHoverDelayTrigger from 'react-hover-delay-trigger'
-import {CardGameMove} from "../cardgame/CardGame";
+import CardGame, {CardGameMove, CardGameState} from "../cardgame/CardGame";
 import DelayHover from "./DelayHover";
+import {ChooseOne} from "../cardgame/Components/ChoiceActions/ChooseOne";
 
 type CardProps = {
     card:Card,
     onClick:()=>void,
     setPreview:(move?:CardGameMove)=>void,
+    gamestate:CardGameState;
+    game:CardGame;
     isOpponent:boolean;
     beingPlayed:boolean;
     canBeDiscarded:boolean;
@@ -80,6 +83,14 @@ const VANISHED_STYLE = {
     transform: 'scale(0)'
 }
 
+const CHOICE_BUBBLE_STYLE = {
+    display: 'inline-block',
+    margin: 5,
+    background: 'rgba(255, 128, 0, 0.5)',
+    padding: 20,
+    borderRadius: 15
+}
+
 const WRAPPER_STYLE:CSSProperties = {
     position: "relative",
      transition: 'transform 0.3s, margin 0.35s ease-in 0.3s, top 0.4s ease-in-out 0.5s',
@@ -104,7 +115,6 @@ const CardDisplay:FunctionComponent<CardProps> = (props)=> {
         }
     })
 
-
     const {card, beingPlayed} = props;
     const situationalStyle = props.canBeDiscarded ? CAN_BE_DISCADED_STYLE :
         props.canBePlayed ? CAN_BE_PLAYED_STYLE :
@@ -114,8 +124,11 @@ const CardDisplay:FunctionComponent<CardProps> = (props)=> {
         (props.beingPlayed && !props.isOpponent) ? MOVE_UP_STYLE :
             {};
     const hiddenStyling = props.isHidden ? HIDDEN_STYLING : {}
-    const onClick = props.canBeDiscarded || props.canBePlayed ? props.onClick : () => {
-    };
+    const onClick = props.canBeDiscarded || props.canBePlayed ? props.onClick : () => {};
+
+    const activeChoice = props.game.getActiveActionChoice(props.gamestate) as ChooseOne|undefined;
+    const chooseOneActive = activeChoice?.constructor === ChooseOne;
+    const choiceTexts:string[] = activeChoice && activeChoice.constructor === ChooseOne ? [activeChoice.aText, activeChoice.bText] : []
 
     return <DelayHover
             delay={400}
@@ -128,7 +141,21 @@ const CardDisplay:FunctionComponent<CardProps> = (props)=> {
                 props.setPreview()
             }}
           >
-            <div style={{...WRAPPER_STYLE, ...positionStyling}}>
+        <div style={{...WRAPPER_STYLE, ...positionStyling}}>
+            {<div style={{
+                position: 'absolute',
+                top:-200,
+                left: -150,
+                width: 300,
+                transition:'opacity 0.4s',
+                opacity: props.beingPlayed && chooseOneActive ? 1 : 0,
+            }}>
+                {[1,2].map(i=>
+                    <div style={CHOICE_BUBBLE_STYLE} className={'glow'}>
+                        {choiceTexts[i-1]}
+                    </div>
+                )}
+            </div>}
         <div style={{...beingPlayed ? BEING_PLAYED_CARD_STYLE : CARD_STYLE, ...situationalStyle, ...hiddenStyling}}
              onClick={onClick}>
             <div style={CARD_TITLE_STYLE}>

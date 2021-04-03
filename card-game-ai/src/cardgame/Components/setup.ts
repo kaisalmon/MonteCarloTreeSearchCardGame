@@ -11,6 +11,7 @@ import {setupChooseAPlayer} from "./ChoiceActions/ChooseAPlayer";
 import {setupMoveDemographics} from './Effects/MoveDemographicEffect'
 import {setupMovePlayer} from "./Effects/MovePlayerEffect";
 import {setupChooseAnExtreme} from "./ChoiceActions/ChooseAnExtreme";
+import {setupChooseOne} from "./ChoiceActions/ChooseOne";
 
 export interface HasTarget{
     target: PlayerTarget;
@@ -67,4 +68,5 @@ export default function () {
     setupChooseAPlayer();
     setupMovePlayer();
     setupChooseAnExtreme();
+    setupChooseOne()
 }

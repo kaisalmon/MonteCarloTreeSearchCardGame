@@ -1,4 +1,4 @@
-import {useState} from "react";
+import React, {useState} from "react";
 
 type ReactHoverDelayTriggerProps = React.PropsWithChildren< {
     delay: number,
@@ -8,6 +8,11 @@ type ReactHoverDelayTriggerProps = React.PropsWithChildren< {
 export default function DelayHover(props:ReactHoverDelayTriggerProps):JSX.Element {
     const [tId, setTId] = useState(0)
     const [hovered, setHovered] = useState(false)
+    const {handleHoverCancel} = props;
+    React.useEffect(()=>{
+        //do Nothing
+        return ()=>handleHoverCancel();
+    },[]);
     return <span
         onMouseOver={()=>{
             if(!hovered){

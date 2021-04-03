@@ -34,5 +34,7 @@ export default function setup(){
 
     new TextTemplate('Eff', '%Player loses? %N popularity', (target:PlayerTarget, n:number)=>new ChangePlayerValue(target, -n, 'popularity'));
     new TextTemplate('Eff', '%Player gains? %N popularity', (target:PlayerTarget, n:number)=>new ChangePlayerValue(target, n, 'popularity'));
+    new TextTemplate('Eff', '%Player gains? %N political capital', (target:PlayerTarget, n:number)=>new ChangePlayerValue(target, n, 'capital'));
+    new TextTemplate('Eff', '%Player loses? %N political capital', (target:PlayerTarget, n:number)=>new ChangePlayerValue(target, -n, 'capital'));
 
 }

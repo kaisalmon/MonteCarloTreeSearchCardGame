@@ -3,7 +3,7 @@ import {Card, PlayerKey} from "../Card";
 import _ from 'lodash'
 import {EventParams, EventType} from "./Abilities/OnEventAbility";
 
-type Component = ResolveSlot<any>
+type Component = ResolveSlot<any>|string[]
 type GetSlot<T extends Component> = T extends ResolveSlot<infer R> ? R : any;
 type Slot = 'Eff'|'Player'|'N'|'Cond'|'Ability'|'ChoiceAction'|'Demos'|'Position'
 type ResolveSlot<SLOT extends Slot> = SLOT extends 'Eff' ? Effect
@@ -109,7 +109,7 @@ export default class TextTemplate<T extends Component, ARGS extends Component[]=
         const args = template.slots.map((slot, i)=>{
           return TextTemplate.parse(slot, subTexts[i])
         })
-        return template.factory(...args as any) as unknown as ResolveSlot<SLOT>;
+        return template.factory(...args as any, subTexts) as unknown as ResolveSlot<SLOT>;
       }catch(e){
         errors.push(e);
         return undefined;

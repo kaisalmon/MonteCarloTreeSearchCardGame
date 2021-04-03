@@ -5,26 +5,30 @@ export type PlayerKey = 'playerOne'|'playerTwo'
 
 export abstract class Card{
     cardNumber: number;
+    cost: number;
     abstract getName():string;
     abstract getText():string;
     abstract applyEffect(state:CardGameState, playerKey:PlayerKey, game:CardGame):CardGameState;
 
-    constructor(cardNumber: number) {
+    constructor(cardNumber: number, cost:number) {
         this.cardNumber = cardNumber;
+        this.cost = cost;
     }
 
 
     private preEffect(state:CardGameState, playerKey:PlayerKey):CardGameState{
         const player = state[playerKey];
         const hand = [...player.hand]
-        const {isFirstTurn} = state;
-        const cost = 0;
+        const capitalCost = Math.min(player.capital, this.cost);
+        const popCost = this.cost - capitalCost
         hand.splice(hand.indexOf(this.cardNumber), 1);
         return {
             ...state,
+            endRoundAfterThisTurn: false,
             [playerKey]: {
                 ...player,
-                popularity: player.popularity - cost,
+                popularity: player.popularity - popCost,
+                capital: player.capital - capitalCost,
                 hand
             }
         }
@@ -68,8 +72,8 @@ export class EffectCard extends Card{
         return this.text;
     }
 
-    constructor(effect:Effect, text:string, name:string, cardNumber:number) {
-        super(cardNumber);
+    constructor(effect:Effect, text:string, name:string, cardNumber:number, cost=1) {
+        super(cardNumber, cost);
         this.effect = effect;
         this.text = text;
         this.name = name;
@@ -92,8 +96,8 @@ export class ChoiceActionCard extends Card{
     getText(): string {
         return this.text;
     }
-    constructor(choiceAction:ChoiceAction, text:string, name:string,cardNumber:number) {
-        super(cardNumber);
+    constructor(choiceAction:ChoiceAction, text:string, name:string,cardNumber:number, cost=1) {
+        super(cardNumber, cost);
         this.choiceAction = choiceAction;
         this.text = text;
         this.name = name;
@@ -102,6 +106,8 @@ export class ChoiceActionCard extends Card{
         return {
             ...state,
             step:'choice',
+            endRoundAfterThisTurn: false,
+            cardPlayedThisTurn: true,
             cardBeingPlayed: this.cardNumber,
         }
     }
@@ -125,8 +131,8 @@ export class ItemCard extends Card{
     getText(): string {
         return this.text;
     }
-    constructor(ability:Ability, text:string, name:string, cardNumber:number) {
-        super(cardNumber);
+    constructor(ability:Ability, text:string, name:string, cardNumber:number, cost=1) {
+        super(cardNumber, cost);
         this.ability = ability;
         this.text = text;
         this.name = name;
