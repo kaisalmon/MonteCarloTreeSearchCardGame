@@ -5,6 +5,7 @@ import ReactHoverDelayTrigger from 'react-hover-delay-trigger'
 import CardGame, {CardGameMove, CardGameState} from "../cardgame/CardGame";
 import DelayHover from "./DelayHover";
 import {ChooseOne} from "../cardgame/Components/ChoiceActions/ChooseOne";
+import CardComponent from "./CardComponent";
 
 type CardProps = {
     card:Card,
@@ -20,32 +21,7 @@ type CardProps = {
     onBoard:boolean;
 }
 
-const CARD_STYLE:CSSProperties = {
-    backgroundColor: 'white',
-    borderWidth: '1px',
-    borderColor:'black',
-    borderStyle: 'solid',
-    fontSize: 11,
-    borderRadius: 3,
-    width: 80,
-    height: 120,
-    marginLeft: 5,
-    marginTop: 5,
-    marginRight: 5,
-    marginBottom: 5,
-    top:0,
-    display: 'inline-block',
-    transition: 'transform 0.3s, margin 0.35s ease-in 0.3s, top 0.4s ease-in-out 0.5s',
-    cursor: 'not-allowed',
-    overflow: 'hidden',
-    zIndex: 0,
-}
-const CARD_TITLE_STYLE:CSSProperties ={
-    fontWeight: 'bold',
-    fontSize: 16,
-}
 const BEING_PLAYED_CARD_STYLE = {
-    ...CARD_STYLE,
     color: 'blue',
     borderColor: 'black',
     transform: "scale(1.3)",
@@ -54,13 +30,11 @@ const BEING_PLAYED_CARD_STYLE = {
     zIndex: 1,
 }
 const CAN_BE_DISCADED_STYLE = {
-    ...CARD_STYLE,
     borderColor: 'red',
     borderWidth: 3,
     cursor: 'pointer'
 }
 const CAN_BE_PLAYED_STYLE = {
-    ...CARD_STYLE,
     borderColor: 'blue',
     borderWidth: 3,
     cursor: 'pointer',
@@ -73,11 +47,6 @@ const MOVE_UP_STYLE = {
     top: -160,
 }
 
-const HIDDEN_STYLING = {
-    backgroundColor: 'darkgray',
-    color: 'darkgray',
-    transform: 'rotate3d(0,1,0,0.5turn)'
-}
 
 const VANISHED_STYLE = {
     transform: 'scale(0)'
@@ -99,7 +68,7 @@ const WRAPPER_STYLE:CSSProperties = {
     zIndex: 1,
 }
 
-const CardDisplay:FunctionComponent<CardProps> = (props)=> {
+const CardWrapper:FunctionComponent<CardProps> = (props)=> {
     const [hasAppearedOnBoard, setHasAppearedOnBoard] = React.useState(props.onBoard && !props.beingPlayed)
     React.useEffect(() => {
         if (props.onBoard && props.beingPlayed) {
@@ -123,7 +92,6 @@ const CardDisplay:FunctionComponent<CardProps> = (props)=> {
     const positionStyling = (props.beingPlayed && props.isOpponent) ? MOVE_DOWN_STYLE :
         (props.beingPlayed && !props.isOpponent) ? MOVE_UP_STYLE :
             {};
-    const hiddenStyling = props.isHidden ? HIDDEN_STYLING : {}
     const onClick = props.canBeDiscarded || props.canBePlayed ? props.onClick : () => {};
 
     const activeChoice = props.game.getActiveActionChoice(props.gamestate) as ChooseOne|undefined;
@@ -156,18 +124,10 @@ const CardDisplay:FunctionComponent<CardProps> = (props)=> {
                     </div>
                 )}
             </div>}
-        <div style={{...beingPlayed ? BEING_PLAYED_CARD_STYLE : CARD_STYLE, ...situationalStyle, ...hiddenStyling}}
-             onClick={onClick}>
-            <div style={CARD_TITLE_STYLE}>
-                {card.getName()}
-            </div>
-            <div>
-                {card.getText()}
-            </div>
-        </div>
+        <CardComponent style={{...beingPlayed ? BEING_PLAYED_CARD_STYLE : {}, ...situationalStyle}} onClick={onClick} card={card} isHidden={props.isHidden}/>
         {props.beingPlayed && ChoiceActionCard.is(card) && !props.isOpponent && <ChoiceArrow/>}
     </div>
         </DelayHover>
 }
 
-export default CardDisplay;
+export default CardWrapper;

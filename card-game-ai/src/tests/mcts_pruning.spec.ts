@@ -1,10 +1,10 @@
 import {describe} from "mocha";
 import {performance} from 'perf_hooks';
-import {ConnectFourGame} from "../MCTS/ConnectFour";
-import {MCTSStrategy} from "../MCTS/mcts";
+import {ConnectFourGame} from "../mcts/ConnectFour";
+import {MCTSStrategy} from "../mcts/mcts";
 import assert from "assert";
 
-describe("MCTS - Pruning", ()=> {
+describe("mcts - Pruning", ()=> {
     it("Doesn't explode",()=>{
         const game = new ConnectFourGame();
         const ai = new MCTSStrategy(100,100)

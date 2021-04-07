@@ -1,7 +1,7 @@
 import CardGame, {CardGameMove, CardGameState} from "../../cardgame/CardGame";
 import {Card} from "../../cardgame/Card";
 import loadExampleDeck from "../../cardgame/Data/ExampleDecks";
-import {MCTSStrategy, MoveFromGame, RandomStrategy, StateFromGame} from "../../MCTS/mcts";
+import {MCTSStrategy, MoveFromGame, RandomStrategy, StateFromGame} from "../../mcts/mcts";
 import setupEffects from "../../cardgame/Components/setup";
 import CardGameStrategy from "../../cardgame/CardGameStrategy";
 
@@ -14,7 +14,7 @@ export type WorkerResponse = {
 setupEffects();
 const cardIndex:Record<number, Card> = loadExampleDeck()
 const game = new CardGame(cardIndex)
-const strategy:MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(1000,100, game.getHeuristic.bind(game), new CardGameStrategy())
+const strategy:MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>> = new MCTSStrategy(700,30, game.getHeuristic.bind(game), new CardGameStrategy())
 
 strategy.useCache = true;
 strategy.usePruning = true;

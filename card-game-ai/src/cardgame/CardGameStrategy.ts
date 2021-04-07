@@ -1,4 +1,4 @@
-import {Strategy} from "../MCTS/mcts";
+import {Strategy} from "../mcts/mcts";
 import CardGame, {CardGameMove, CardGameState} from "./CardGame";
 import _ from 'lodash';
 
@@ -9,7 +9,8 @@ export default class CardGameStrategy implements Strategy<CardGameState, CardGam
         const playerKey = state.activePlayer === 1 ? 'playerOne' : 'playerTwo';
         const winning = game.getHeuristic(state) * (state.activePlayer === 1 ? 1 : -1) > 0.1;
         const outOfCapital = state[playerKey].capital <= 0;
-        const skipProb =    winning && outOfCapital ? 0.95 :
+        const skipProb =    winning && state.roundsUntilElection === 1 ? 1.00 :
+                            winning && outOfCapital ? 0.95 :
                             winning && !outOfCapital ? 0.7 :
                             outOfCapital ? 0.5 :  0.05;
 

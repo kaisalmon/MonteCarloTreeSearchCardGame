@@ -3,6 +3,7 @@ import {Card, PlayerKey} from "../Card";
 import _ from 'lodash'
 import {EventParams, EventType} from "./Abilities/OnEventAbility";
 
+type KeysMatching<T, V> = {[K in keyof T]?: T[K] extends V ? K : never}[keyof T] | {[K in keyof T]?: T[K] extends (V|undefined) ? K : never}[keyof T] ;
 type Component = ResolveSlot<any>|string[]
 type GetSlot<T extends Component> = T extends ResolveSlot<infer R> ? R : any;
 type Slot = 'Eff'|'Player'|'N'|'Cond'|'Ability'|'ChoiceAction'|'Demos'|'Position'
@@ -20,8 +21,10 @@ type ResolveSlot<SLOT extends Slot> = SLOT extends 'Eff' ? Effect
 export type ExecutionContext = {
   playerKey: PlayerKey
   lastPlayer?: PlayerKey;
-  lastExtreme?: {x:number, y:number}
+  lastExtreme?: Coord;
 } & (EventContext<EventType> | {})
+
+export type Coord = {x:number, y:number};
 
 type EventContext<E extends EventType> = {
     eventType: E,
@@ -34,13 +37,19 @@ export type Resolver<T> = {
 
 export class ResolveConstant<T>{
   value:T;
-  constructor(value:T) {
+  ctxKey?: KeysMatching<ExecutionContext, T>;
+  constructor(value:T, ctxKey?: KeysMatching<ExecutionContext, T>) {
     this.value = value;
+    this.ctxKey = ctxKey;
   }
-    resolveValue(state:CardGameState, ctx:ExecutionContext, game:CardGame){
+    resolveValue(state:CardGameState, ctx:ExecutionContext, game:CardGame):T{
+      if(this.ctxKey){
+        (ctx as any)[this.ctxKey] = this.value;
+      }
       return this.value;
     }
 }
+
 
 export type PlayerTarget = Resolver<PlayerKey>
 

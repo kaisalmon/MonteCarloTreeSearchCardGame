@@ -1,6 +1,6 @@
 import CardGame, {CardGameChoiceMove, CardGameMove, CardGamePlayerState, CardGameState} from "../cardgame/CardGame";
 import React, {CSSProperties, FunctionComponent, useEffect} from "react";
-import CardDisplay  from "./CardDisplay";
+import CardWrapper  from "./CardWrapper";
 import DemographicDisplay from "./DemographicDisplay";
 
 import _ from 'lodash'
@@ -78,7 +78,7 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, setPr
     const board = <div >
         <FlipMove style={{...PLAYER_BOARD_STYLE}}>
             {player.board.map(n=><div key={n+' '+game.cardIndex[n].getName()}>
-                <CardDisplay
+                <CardWrapper
                     gamestate={gamestate}
                     game={game}
                     onClick={()=>{}}
@@ -110,7 +110,7 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, setPr
             </div>
             <FlipMove style={{...HAND_STYLE}}>
                 {displayHand.map(n=><div key={n+' '+game.cardIndex[n].getName()} style={{position: 'relative'}}>
-                    <CardDisplay
+                    <CardWrapper
                         gamestate={gamestate}
                         game={game}
                         onClick={()=>onCardClick(n)}

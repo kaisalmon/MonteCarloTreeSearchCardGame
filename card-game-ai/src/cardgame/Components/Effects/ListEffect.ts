@@ -20,6 +20,7 @@ export default function setup(){
     new TextTemplate('Eff', '%Eff and %Eff', (a:Effect, b:Effect)=>new ListEffect(a,b));
     new TextTemplate('Eff', '%Eff, and %Eff', (a:Effect, b:Effect)=>new ListEffect(a,b));
     new TextTemplate('Eff', '%Eff, %Eff', (a:Effect, b:Effect)=>new ListEffect(a,b));
+    new TextTemplate('Eff', '%Eff twice', (a:Effect)=>new ListEffect(a,a));
     new TextTemplate('Eff', '%Eff\\. %Eff', (a:Effect, b:Effect)=>new ListEffect(a,b));
     new TextTemplate('Eff', '%Eff then %Eff', (a:Effect, b:Effect)=>new ListEffect(a,b));
     new TextTemplate('Eff', '%Eff, then %Eff', (a:Effect, b:Effect)=>new ListEffect(a,b));

@@ -8,9 +8,9 @@ export type CardSource = KeysMatching<CardGamePlayerState, readonly number[]>;
 export type CardDest = KeysMatching<CardGamePlayerState, readonly number[]>;
 
 class RandomTransferEffect extends Effect{
-    target:PlayerTarget
-    from:CardSource
-    to:CardDest
+    target:PlayerTarget;
+    from:CardSource;
+    to:CardDest;
     n: number;
     constructor(target:PlayerTarget, from:CardSource, to:CardDest, n:number) {
         super();

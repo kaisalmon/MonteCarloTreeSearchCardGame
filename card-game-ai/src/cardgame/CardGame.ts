@@ -1,4 +1,4 @@
-import {Game, GameStatus} from "../MCTS/mcts";
+import {Game, GameStatus} from "../mcts/mcts";
 import chalk from 'chalk'
 import {Card, ChoiceActionCard, EffectCard, ItemCard, PlayerKey} from "./Card";
 import {DrawCardEffect} from "./Components/Effects/RandomTransferEffect";
@@ -7,6 +7,8 @@ import {ChoiceAction, Fizzle} from "./Components/TextTemplate";
 import {ConditionalEffect} from "./Components/Effects/ConditionalEffect";
 import {EventParams, EventType, OnEventAbility} from "./Components/Abilities/OnEventAbility";
 import _ from 'lodash'
+import {createStartingDemographics} from "./CreateStartingDemographics";
+
 
 export type CardGameChain = CardGameMove|CardGameMove[]
 
@@ -40,6 +42,7 @@ interface CardGameEndMove {type:"end"}
 export interface CardGameChoiceMove {type:"choice", choice:number}
 export type CardGameMove = CardGameEndMove | CardGamePlayCardMove | CardGameDiscardCardMove | CardGameChoiceMove;
 
+export const POP_RANGE = 1/75;
 
 export default class CardGame extends Game<CardGameState, CardGameMove>{
 
@@ -90,16 +93,19 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
     }
 
     getDemographicVote(state:CardGameState, pos:{x:number, y:number}):1|2|undefined{
+        const MARGIN = 0.002;
+
         const bPop = state.playerOne.popularity;
         const rPop = state.playerTwo.popularity;
 
         const bdistSquared = Math.pow(state.playerOne.position.x - pos.x, 2) +  Math.pow(state.playerOne.position.y - pos.y, 2)
         const rdistSquared = Math.pow(state.playerTwo.position.x - pos.x, 2) +  Math.pow(state.playerTwo.position.y - pos.y, 2)
-        const rScore =  rPop/100.0 - rdistSquared;
-        const bScore =  bPop/100.0 -  bdistSquared;
 
-        if(bScore > rScore && bScore > 0.0) return 1;
-        if(rScore > bScore && rScore > 0.0) return 2;
+        const rScore =  rPop * POP_RANGE - rdistSquared;
+        const bScore =  bPop * POP_RANGE -  bdistSquared;
+
+        if(bScore - MARGIN > rScore && bScore > 0.0) return 1;
+        if(rScore - MARGIN > bScore && rScore > 0.0) return 2;
         return undefined;
     }
 
@@ -140,11 +146,12 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
             discardPile:[],
             board:[],
             capital: 3,
+            popularity: 22,
         }
         const preGame:CardGameState = {
             activePlayer: 1,
             roundsUntilElection: 4,
-            demographics: new Array(50).fill(0).map(()=>({x:(Math.random()+Math.random())-1, y:Math.random()+Math.random()-1})),
+            demographics: createStartingDemographics(),
             endRoundAfterThisTurn: false,
             cardPlayedThisTurn: false,
             step: 'play',
@@ -152,14 +159,12 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
             playerOne:{
                 ...newPlayer,
                 deck: this.deckOne,
-                popularity: 10,
                 position:{x:0.2, y:0},
             },
             playerTwo:{
+                ...newPlayer,
                 deck: this.deckTwo,
                 position:{x:-0.2, y:0},
-                popularity: 10,
-                ...newPlayer
             }
         };
         const blueDrawCardsEffect = new DrawCardEffect(resolveActivePlayer, CardGame.STARTING_HAND_SIZE - 1);

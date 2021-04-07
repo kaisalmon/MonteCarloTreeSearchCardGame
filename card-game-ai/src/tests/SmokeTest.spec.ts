@@ -3,7 +3,7 @@ import CardGame from "../cardgame/CardGame";
 import loadExampleDeck from "../cardgame/Data/ExampleDecks";
 import {Card} from "../cardgame/Card";
 import _ from 'lodash'
-import {GameStatus, MCTSStrategy, MoveFromGame, RandomStrategy, StateFromGame, Strategy} from "../MCTS/mcts";
+import {GameStatus, MCTSStrategy, MoveFromGame, RandomStrategy, StateFromGame, Strategy} from "../mcts/mcts";
 import setupEffects from '../cardgame/Components/setup'
 import TextTemplate from "../cardgame/Components/TextTemplate";
 

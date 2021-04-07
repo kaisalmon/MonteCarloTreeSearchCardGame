@@ -3,7 +3,7 @@ import React, {CSSProperties} from "react";
 import { usePopperTooltip } from "react-popper-tooltip";
 import "react-popper-tooltip/dist/styles.css";
 import bg from './assets/bg.png'
-import CardGame, {CardGameChoiceMove, CardGameMove, CardGameState} from "../cardgame/CardGame";
+import CardGame, {CardGameChoiceMove, CardGameMove, CardGameState, POP_RANGE} from "../cardgame/CardGame";
 import { Shaders, Node, GLSL } from "gl-react";
 import { Surface } from "gl-react-dom";
 import TransitionProps from "./TransitionProps";
@@ -91,10 +91,10 @@ void main() {
   vec2 pBluePos = vec2(pblueX, 1.0-pblueY);
   vec2 pRedPos = vec2(predX, 1.0-predY);
   
-  float blueScore = bluePop/400.0 - distSquared(bluePos, uv);
-  float redScore = redPop/400.0 - distSquared(redPos, uv);
-  float pBlueScore = pbluePop/400.0 - distSquared(pBluePos, uv);
-  float pRedScore = predPop/400.0 - distSquared(pRedPos, uv);
+  float blueScore = bluePop - distSquared(bluePos, uv);
+  float redScore = redPop- distSquared(redPos, uv);
+  float pBlueScore = pbluePop - distSquared(pBluePos, uv);
+  float pRedScore = predPop - distSquared(pRedPos, uv);
   
   bool blueWins = blueScore > 0.0 && blueScore > redScore ;
   bool redWins = redScore > 0.0 && blueScore < redScore ;
@@ -137,22 +137,23 @@ type BackgroundProps = {
 const Background = (props:BackgroundProps) => {
     const { blueX, redPop, redX, bluePop, blueY, redY,
     pblueX, predPop, predX, pbluePop, pblueY, predY} = props;
+    const coef = POP_RANGE * 0.25;
     return <>
         <img src={bg} style={{position:'absolute'}}/>
         <Surface width={500} height={500} style={{mixBlendMode:'multiply'}}>
         <Node shader={shaders.helloBlue} uniforms={{
             blueX:blueX/2 + 0.5,
             blueY:blueY/2 + 0.5,
-            bluePop:bluePop,
+            bluePop:bluePop*coef,
             redX:redX/2 + 0.5,
             redY:redY/2 + 0.5,
-            redPop:redPop,
+            redPop:redPop*coef,
             pblueX:pblueX/2 + 0.5,
             pblueY:pblueY/2 + 0.5,
-            pbluePop:pbluePop,
+            pbluePop:pbluePop*coef,
             predX:predX/2 + 0.5,
             predY:predY/2 + 0.5,
-            predPop:predPop,
+            predPop:predPop*coef,
         }} />
     </Surface>
     </>

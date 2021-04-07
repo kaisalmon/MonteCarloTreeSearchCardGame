@@ -3,7 +3,7 @@ import './App.css';
 import {Card} from "./cardgame/Card";
 import loadExampleDeck from "./cardgame/Data/ExampleDecks";
 import CardGame, {CardGameChain, CardGameMove, CardGameState} from "./cardgame/CardGame";
-import {GameStatus} from "./MCTS/mcts";
+import {GameStatus} from "./mcts/mcts";
 import GameBoard from "./client/GameBoard";
 import setupEffects from "./cardgame/Components/setup";
 import Worker from "./client/worker";
@@ -19,6 +19,8 @@ function getMoveFromCardClick(gamestate:CardGameState, cardNumber:number):CardGa
     if(gamestate.step=='draw')return {type:'discard', cardNumber}
     else return {type:'play', cardNumber}
 }
+
+const WATCH_MODE = false;
 
 const worker = new Worker();
 
@@ -40,7 +42,7 @@ function App() {
     React.useEffect(()=>{
         let nextTimeout:number = 0;
         const loop = async ()=>{
-            if(combinedGameState.state.activePlayer === 2 && !isLoading && game.getStatus(combinedGameState.state) === GameStatus.IN_PLAY){
+            if((combinedGameState.state.activePlayer === 2 || WATCH_MODE) && !isLoading && game.getStatus(combinedGameState.state) === GameStatus.IN_PLAY){
                 setIsLoading(true)
                 const delay_time = (combinedGameState.lastMove as CardGameMove)?.type === 'end' ? 1000 : 1500;
                 const [{mood, move}]:[WorkerResponse, void] = await Promise.all([worker.processData(combinedGameState.state), delay(delay_time)])

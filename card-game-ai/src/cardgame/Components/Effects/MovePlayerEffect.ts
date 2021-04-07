@@ -24,6 +24,7 @@ export abstract class MovePlayerEffect extends Effect{
         }
     }
 }
+const MIN_DISTANCE = 0.01;
 export class MovePlayerTowardsPointEffect extends MovePlayerEffect{
     point:Resolver<{x:number, y:number}>
     stepSize:number;
@@ -37,7 +38,7 @@ export class MovePlayerTowardsPointEffect extends MovePlayerEffect{
         const deltaX = target.x - pos.x;
         const deltaY = target.y - pos.y;
         const deltaMag = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
-        const clampedStepSize = stepSize > 0 ? Math.min(deltaMag, stepSize) : stepSize;
+        const clampedStepSize = stepSize > 0 ? Math.min(deltaMag - MIN_DISTANCE, stepSize) : stepSize;
         const clamp = (n:number)=>Math.max(-1, Math.min(1, n));
         return {
             x: clamp(pos.x + deltaX/deltaMag * clampedStepSize),

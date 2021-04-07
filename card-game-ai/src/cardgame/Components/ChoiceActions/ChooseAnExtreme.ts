@@ -1,7 +1,7 @@
-import TextTemplate, {ChoiceAction, Effect, ExecutionContext, Fizzle, Resolver} from "../TextTemplate";
+import TextTemplate, {ChoiceAction, Effect, ExecutionContext} from "../TextTemplate";
 import CardGame, {CardGameChoiceMove, CardGameState} from "../../CardGame";
-import {PlayerKey} from "../../Card";
 import {EXTREMES} from "../Effects/MoveDemographicEffect";
+import {ContextualExtreme} from "./ContextualExtreme";
 
 const EXTREMES_BY_ID = {
     1: EXTREMES.hearts,
@@ -35,14 +35,7 @@ export class ChooseAnExtreme implements ChoiceAction{
 
 }
 
-class ContextualPosition implements Resolver<{x:number, y:number}>{
-    resolveValue(state:CardGameState, ctx:ExecutionContext):{x:number, y:number} {
-        if(!ctx.lastExtreme) throw new Fizzle(state)
-        return ctx.lastExtreme;
-    }
-}
-
 export function setupChooseAnExtreme(){
     new TextTemplate('ChoiceAction', 'Choose an extreme. %Eff', (eff:Effect)=> new ChooseAnExtreme(eff))
-    new TextTemplate('Position', 'that extreme', (e)=> new ContextualPosition())
+    new TextTemplate('Position', 'that extreme', (e)=> new ContextualExtreme())
 }

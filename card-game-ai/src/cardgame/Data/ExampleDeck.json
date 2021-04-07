@@ -1,0 +1,128 @@
+[
+ {
+   "name": "Heartist Campaign",
+   "text": "All demographics shift towards the hearts extreme, gain two political capital",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Diamondism Campaign ",
+   "text": "All demographics shift towards the diamonds extreme, gain two political capital",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Clubimist Campaign",
+   "text": "All demographics shift towards the clubs extreme, gain two political capital",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Pro-Spade Campaign",
+   "text": "All demographics shift towards the spades extreme, gain two political capital",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Heartist Leadership",
+   "text": "You shift towards the hearts extreme. Gain one popularity",
+   "cost": 1,
+   "type": "effect"
+ },
+ {
+   "name": "Pro-Spade Leadership",
+   "text": "You shift towards the spades extreme. Your opponent loses two popularity",
+   "cost": 1,
+   "type": "effect"
+ },
+ {
+   "name": "Diamondism Leadership",
+   "text": "You shift towards the diamonds extreme. Draw two cards",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Clubimist Leadership",
+   "text": "You shift towards the clubs extreme. Your opponent discards two random cards",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Campaign Trail",
+   "text": "Gain one popularity",
+   "cost": 1,
+   "type": "effect"
+ },
+ {
+   "name": "Pander to Base",
+   "text": "Your followers shift towards you and you gain two political capital",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Prioritize Public Appeal",
+   "text": "Gain one popularity then your followers shift away from you twice",
+   "cost": 1,
+   "type": "effect"
+ },
+ {
+   "name": "Regress to the Mean",
+   "text": "Shift towards the center and gain one popularity",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Two Party System",
+   "text": "Your followers shift towards your opponent, then their followers shift towards you. Gain one popularity",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Personality over Policy",
+   "text": "Shift towards your opponent and gain one political capital",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Criticize Rival",
+   "text": "Shift away from your opponent, then your opponent loses one popularity",
+   "cost": 0,
+   "type": "effect"
+ },
+ {
+   "name": "Reduce Harmful Rhetoric",
+   "text": "Undecided voters shift towards the center. You gain one popularity",
+   "cost": 1,
+   "type": "effect"
+ },
+ {
+   "name": "Open-minded Policy Making",
+   "text": "Choose a player. That player draws 2 cards and loses 2 popularity",
+   "cost": 0,
+   "type": "choice"
+ },
+ {
+   "name": "Cultural Progress",
+   "text": "Choose an extreme. All demographics shift towards that extreme",
+   "cost": 0,
+   "type": "choice"
+ },
+ {
+   "name": "New Leadership",
+   "text": "Choose an extreme. Shift towards that extreme twice and gain one popularity",
+   "cost": 2,
+   "type": "choice"
+ },
+ {
+   "name": "Targeted Advertising",
+   "text": "Choose an extreme. All demographics in that quadrant shift towards you twice",
+   "cost": 0,
+   "type": "choice"
+ },
+ {
+   "name": "Anti Establishment Rhetoric",
+   "text": "Choose an extreme. Undecided voters shift towards that extreme twice",
+   "cost": 0,
+   "type": "choice"
+ }
+]
