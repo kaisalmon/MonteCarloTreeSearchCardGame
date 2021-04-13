@@ -343,7 +343,7 @@ function main(){
         },
         enableMirrorMatches: true,
         maxGameLength: 100,
-        gamesPerMatchUp: 1000,
+        gamesPerMatchUp: 1,
         eloConstant: 30,
         moveAnalysis: true,
         snapshotLength: 37,

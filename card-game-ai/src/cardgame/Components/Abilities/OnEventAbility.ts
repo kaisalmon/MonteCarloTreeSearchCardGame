@@ -4,15 +4,15 @@ import {CardSource} from "../Effects/RandomTransferEffect";
 import CardGame, {CardGameState} from "../../CardGame";
 import {resolveActivePlayer} from "../setup";
 
-export type EventType = 'player_draws'|'player_take_damage'|'turn_start'
+export type TargetedEventType = 'player_draws'|'turn_start';
+export type EventType = TargetedEventType|'round_end';
 export type EventParams<E extends EventType> =
     E extends 'player_draws' ? PlayerDrawsEventParams
-    : E extends 'player_take_damage' ? PlayerTakesDamageEventParams
     : E extends 'turn_start' ?  {player: PlayerKey}
+    : E extends 'round_end' ?  {}
     : never;
 
-type IsTargetedEventType<E extends EventType> = EventParams<E> extends {player:PlayerKey} ? E : never;
-type TargetedEventType = IsTargetedEventType<EventType>
+
 
 export type PlayerDrawsEventParams = {
     player: PlayerKey,
@@ -40,7 +40,7 @@ export class OnEventAbility<E extends EventType> implements Ability{
     trigger(state:CardGameState, eventParams: EventParams<E>, ctx:ExecutionContext, game:CardGame):CardGameState{
         const triggerCtx:ExecutionContext = {
             ...ctx,
-            ...(eventParams?.player && {lastPlayer:eventParams.player}),
+            ...((eventParams as any)?.player && {lastPlayer:(eventParams as any).player}),
             eventType: this.eventType,
             eventParams
         }
@@ -69,7 +69,6 @@ class FilteredOnEventAbility<E extends TargetedEventType> extends OnEventAbility
 export function setup(){
     const playerEventTypes:{eventType:TargetedEventType, text:string}[] = [
         {eventType: 'player_draws', text: 'draws? a card'},
-        {eventType: 'player_take_damage', text: 'takes damage'}
     ]
     playerEventTypes.forEach(({eventType, text})=>{
       new TextTemplate('Ability', `When(?:ever) %Player ${text}, %Eff`, (target:PlayerTarget, eff:Effect)=> new FilteredOnEventAbility(eventType, eff, target));
@@ -77,4 +76,6 @@ export function setup(){
     });
     new TextTemplate('Ability', `At the start of each turn, %Eff`, (eff:Effect)=> new OnEventAbility('turn_start', eff));
     new TextTemplate('Ability', `At the start of your turn, %Eff`, (eff:Effect)=> new FilteredOnEventAbility('turn_start', eff, resolveActivePlayer));
+
+    new TextTemplate('Ability', `At the end of each round, %Eff`, (eff:Effect)=> new OnEventAbility('round_end', eff));
 }

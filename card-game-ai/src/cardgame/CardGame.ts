@@ -227,7 +227,8 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         const roundEnding = state.endRoundAfterThisTurn;
         const afterRoundUpdateState =  roundEnding ? this.onRoundEnd(state) : state;
         const drawEffect = new DrawCardEffect(resolveOpponent,1);
-        const afterDraw =  !roundEnding && !state.cardPlayedThisTurn ? drawEffect.applyEffectNoThrow(afterRoundUpdateState, {playerKey}, this) : afterRoundUpdateState;
+        const shouldDraw = !roundEnding && !state.cardPlayedThisTurn && state[playerKey].hand.length > 1;
+        const afterDraw = shouldDraw ? drawEffect.applyEffectNoThrow(afterRoundUpdateState, {playerKey}, this) : afterRoundUpdateState;
         const afterTurnEndState:CardGameState =  {
             ...afterDraw,
             step: 'play',
@@ -319,19 +320,22 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
     }
 
     private onRoundEnd(state: CardGameState):CardGameState {
+        const afterEvents:CardGameState =  {
+            ...this.processEvent(state, 'round_end', {}),
+            roundsUntilElection: state.roundsUntilElection - 1,
+            endRoundAfterThisTurn: false,
+        };
+        if(afterEvents.roundsUntilElection === 0) return afterEvents;
         const updatePlayer = (player:CardGamePlayerState) => ({
             ...player,
             capital: player.capital + 1,
             hand: []
         })
-        const newState = {
-            ...state,
-            endRoundIfNoCardPlayedThisTurn: false,
-            roundsUntilElection: state.roundsUntilElection - 1,
-            playerOne: updatePlayer(state.playerOne),
-            playerTwo: updatePlayer(state.playerTwo),
+        const newState:CardGameState = {
+            ...afterEvents,
+            playerOne: updatePlayer(afterEvents.playerOne),
+            playerTwo: updatePlayer(afterEvents.playerTwo),
         }
-        if(state.roundsUntilElection === 1) return newState;
         const drawEffect = new DrawCardEffect(resolveActivePlayer, 6)
         return drawEffect.applyEffectNoThrow(drawEffect.applyEffectNoThrow(newState, {playerKey:'playerTwo'}, this), {playerKey:'playerOne'}, this);
     }

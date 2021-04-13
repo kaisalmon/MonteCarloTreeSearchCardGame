@@ -29,5 +29,5 @@ export default function setup(){
     };
     new TextTemplate('Eff', '%Eff, if %Cond', reversedConditionalFactory);
     new TextTemplate('Eff', '%Eff if %Cond', reversedConditionalFactory);
-    new TextTemplate('Eff', 'If %Cond, %Eff', (cond:Resolver<boolean>, eff:Effect)=>new ConditionalEffect(eff,cond));
+    new TextTemplate('Eff', 'if %Cond, %Eff', (cond:Resolver<boolean>, eff:Effect)=>new ConditionalEffect(eff,cond));
 }

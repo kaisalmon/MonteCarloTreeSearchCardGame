@@ -2,6 +2,7 @@ import TextTemplate, {Effect, ExecutionContext, PlayerTarget, ResolveConstant, R
 import CardGame, {CardGamePlayerState, CardGameState} from "../../CardGame";
 import {MovePlayerTowardsPointEffect} from "./MovePlayerEffect";
 import {ContextualExtreme} from "../ChoiceActions/ContextualExtreme";
+import _ from 'lodash'
 
 export const EXTREMES = {
     hearts: {x:1, y:-1},
@@ -78,15 +79,20 @@ class resolveUndecided implements Resolver<number[]>{
 
 class resolveQuadrantDemographics implements Resolver<number[]>{
     point:Resolver<{x:number, y:number}>
-    constructor(point:Resolver<{x:number, y:number}>) {
-        this.point = point
+    demos:Resolver<number[]>;
+
+    constructor(demos: Resolver<number[]>, point: Resolver<{ x: number; y: number }>) {
+        this.point = point;
+        this.demos = demos
     }
     resolveValue(state: CardGameState, ctx: ExecutionContext, game:CardGame){
         const {x,y} = this.point.resolveValue(state, ctx, game);
-        return state.demographics
+        const inQuad = state.demographics
             .map((demo,i)=>({demo, i}))
             .filter(({demo})=> Math.sign(x)===Math.sign(demo.x) && Math.sign(y)===Math.sign(demo.y))
             .map(({i})=>i)
+        const inSource = this.demos.resolveValue(state, ctx, game);
+        return _.intersectionWith(inQuad, inSource);
     }
 }
 
@@ -103,15 +109,15 @@ export class ResolvePlayerPosition implements Resolver<{x:number, y:number}>{
 }
 
 export function setupMoveDemographics(){
-    new TextTemplate('Demos', 'All demographics', () => new resolveAllDemographics());
+    new TextTemplate('Demos', '(?:All )demographics', () => new resolveAllDemographics());
     new TextTemplate('Demos', '%Player followers', (playerTarget:PlayerTarget) => new resolveFollowers(playerTarget));
     new TextTemplate('Demos', 'undecided voters', () => new resolveUndecided());
-    new TextTemplate('Demos', `(?:all) demographics in that quadrant`, () => new resolveQuadrantDemographics(new ContextualExtreme()));
+    new TextTemplate('Demos', `%Demos in that quadrant`, (demos:Resolver<number[]>) => new resolveQuadrantDemographics(demos, new ContextualExtreme()));
 
 
     Object.entries(EXTREMES).forEach(([extreme, position]) => {
-        new TextTemplate('Position', `the ${extreme} extreme`, () => new ResolveConstant(position, 'lastExtreme'));
-        new TextTemplate('Demos', `demographics in the ${extreme} quadrant`, () => new resolveQuadrantDemographics(new ResolveConstant(position, 'lastExtreme')))
+        new TextTemplate('Position', `the ${extreme} (?:extreme|quadrant)`, () => new ResolveConstant(position, 'lastExtreme'));
+        new TextTemplate('Demos', `%Demos in the ${extreme} quadrant`, (demos:Resolver<number[]>) => new resolveQuadrantDemographics(demos, new ResolveConstant(position, 'lastExtreme')))
     });
 
     new TextTemplate('Position', 'the cente?re?', () => new ResolveConstant({x:0, y:0}));

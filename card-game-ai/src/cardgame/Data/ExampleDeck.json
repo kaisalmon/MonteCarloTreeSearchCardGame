@@ -116,6 +116,12 @@
  {
    "name": "Targeted Advertising",
    "text": "Choose an extreme. All demographics in that quadrant shift towards you twice",
+   "cost": 1,
+   "type": "choice"
+ },
+ {
+   "name": "Dog Whistle",
+   "text": "Choose an extreme. Undecided voters in that quadrant shift towards you twice",
    "cost": 0,
    "type": "choice"
  },
@@ -124,5 +130,11 @@
    "text": "Choose an extreme. Undecided voters shift towards that extreme twice",
    "cost": 0,
    "type": "choice"
+ },
+ {
+   "name": "Heartist Policies",
+   "text": "At the end of each round, if you are in the hearts extreme, all demographics in that quadrant shift towards you and you gain two popularity",
+   "cost": 2,
+   "type": "policy"
  }
 ]

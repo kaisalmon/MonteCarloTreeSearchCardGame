@@ -20,7 +20,7 @@ function getMoveFromCardClick(gamestate:CardGameState, cardNumber:number):CardGa
     else return {type:'play', cardNumber}
 }
 
-const WATCH_MODE = false;
+const WATCH_MODE = true;
 
 const worker = new Worker();
 

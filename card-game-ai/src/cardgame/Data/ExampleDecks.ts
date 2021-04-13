@@ -1,6 +1,6 @@
 
 import parse from 'csv-parse/lib/sync'
-import {Card, ChoiceActionCard, EffectCard} from "../Card";
+import {Card, ChoiceActionCard, EffectCard, ItemCard} from "../Card";
 import TextTemplate from "../Components/TextTemplate";
 import ExampleDeckCsv from './ExampleDeck.json'
 
@@ -19,6 +19,9 @@ function parseCard(raw:RawCard, cardNumber:number):Card {
     }else if(type === 'choice'){
         const effect = TextTemplate.parse('ChoiceAction', text);
         return new ChoiceActionCard(effect, text, name, cardNumber, cost);
+    }else if(type === 'policy'){
+        const ability = TextTemplate.parse('Ability', text);
+        return new ItemCard(ability, text, name, cardNumber, cost);
     }
     throw new Error("Unknown Card Type "+type)
 }

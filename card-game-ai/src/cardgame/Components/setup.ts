@@ -12,6 +12,7 @@ import {setupMoveDemographics} from './Effects/MoveDemographicEffect'
 import {setupMovePlayer} from "./Effects/MovePlayerEffect";
 import {setupChooseAnExtreme} from "./ChoiceActions/ChooseAnExtreme";
 import {setupChooseOne} from "./ChoiceActions/ChooseOne";
+import setupPlayerPositionCondition from "./GameConditions/PlayerPositionCondition";
 
 export interface HasTarget{
     target: PlayerTarget;
@@ -69,4 +70,5 @@ export default function () {
     setupMovePlayer();
     setupChooseAnExtreme();
     setupChooseOne()
+    setupPlayerPositionCondition()
 }
