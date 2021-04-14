@@ -16,7 +16,7 @@ type CombinedGameState = {
 }
 
 function getMoveFromCardClick(gamestate:CardGameState, cardNumber:number):CardGameMove{
-    if(gamestate.step=='draw')return {type:'discard', cardNumber}
+    if(gamestate.step==='draw')return {type:'discard', cardNumber};
     else return {type:'play', cardNumber}
 }
 

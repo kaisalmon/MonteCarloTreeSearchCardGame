@@ -64,7 +64,7 @@ export interface ChoiceAction {
 
 export abstract class Effect{
   abstract applyEffect(state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState;
-  applyEffectNoThrow(state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState{
+  applyEffectNoFizzle(state:CardGameState, executionContext:ExecutionContext, game:CardGame):CardGameState{
      try{
         return this.applyEffect(state, executionContext, game);
     }catch(e){

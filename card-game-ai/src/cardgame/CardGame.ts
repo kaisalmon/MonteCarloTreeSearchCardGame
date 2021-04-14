@@ -3,11 +3,13 @@ import chalk from 'chalk'
 import {Card, ChoiceActionCard, EffectCard, ItemCard, PlayerKey} from "./Card";
 import {DrawCardEffect} from "./Components/Effects/RandomTransferEffect";
 import {resolveActivePlayer, resolveOpponent} from "./Components/setup";
-import {ChoiceAction, Fizzle} from "./Components/TextTemplate";
+import TextTemplate, {ChoiceAction, Fizzle} from "./Components/TextTemplate";
 import {ConditionalEffect} from "./Components/Effects/ConditionalEffect";
 import {EventParams, EventType, OnEventAbility} from "./Components/Abilities/OnEventAbility";
 import _ from 'lodash'
 import {createStartingDemographics} from "./CreateStartingDemographics";
+import ListEffect from "./Components/Effects/ListEffect";
+import {ChangePlayerValue} from "./Components/Effects/ChangePlayerValue";
 
 
 export type CardGameChain = CardGameMove|CardGameMove[]
@@ -43,6 +45,11 @@ export interface CardGameChoiceMove {type:"choice", choice:number}
 export type CardGameMove = CardGameEndMove | CardGamePlayCardMove | CardGameDiscardCardMove | CardGameChoiceMove;
 
 export const POP_RANGE = 1/75;
+
+const PASS_TURN_DRAW_EFFECT = new ListEffect(
+    new ChangePlayerValue(resolveOpponent, 1, 'popularity'),
+    new DrawCardEffect(resolveOpponent, 1)
+)
 
 export default class CardGame extends Game<CardGameState, CardGameMove>{
 
@@ -226,9 +233,8 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         const playerKey = activePlayer  === 1 ? 'playerOne' : 'playerTwo';
         const roundEnding = state.endRoundAfterThisTurn;
         const afterRoundUpdateState =  roundEnding ? this.onRoundEnd(state) : state;
-        const drawEffect = new DrawCardEffect(resolveOpponent,1);
-        const shouldDraw = !roundEnding && !state.cardPlayedThisTurn && state[playerKey].hand.length > 1;
-        const afterDraw = shouldDraw ? drawEffect.applyEffectNoThrow(afterRoundUpdateState, {playerKey}, this) : afterRoundUpdateState;
+        const shouldDraw = !roundEnding && !state.cardPlayedThisTurn && state[playerKey].popularity > 0;
+        const afterDraw = shouldDraw ? PASS_TURN_DRAW_EFFECT.applyEffectNoFizzle(afterRoundUpdateState, {playerKey}, this) : afterRoundUpdateState;
         const afterTurnEndState:CardGameState =  {
             ...afterDraw,
             step: 'play',
@@ -337,7 +343,7 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
             playerTwo: updatePlayer(afterEvents.playerTwo),
         }
         const drawEffect = new DrawCardEffect(resolveActivePlayer, 6)
-        return drawEffect.applyEffectNoThrow(drawEffect.applyEffectNoThrow(newState, {playerKey:'playerTwo'}, this), {playerKey:'playerOne'}, this);
+        return drawEffect.applyEffectNoFizzle(drawEffect.applyEffectNoFizzle(newState, {playerKey:'playerTwo'}, this), {playerKey:'playerOne'}, this);
     }
 
     getActiveActionChoice(state:CardGameState): ChoiceAction|undefined{

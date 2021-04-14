@@ -2,7 +2,7 @@ import TextTemplate, {Effect, ExecutionContext} from "../TextTemplate";
 import CardGame, {CardGameState} from "../../CardGame";
 import {PlayerKey} from "../../Card";
 
-class ListEffect extends Effect{
+export default class ListEffect extends Effect{
     a:Effect;
     b:Effect;
     constructor(a:Effect, b:Effect) {
@@ -16,7 +16,7 @@ class ListEffect extends Effect{
     }
 }
 
-export default function setup(){
+export function setupListEffects(){
     new TextTemplate('Eff', '%Eff and %Eff', (a:Effect, b:Effect)=>new ListEffect(a,b));
     new TextTemplate('Eff', '%Eff, and %Eff', (a:Effect, b:Effect)=>new ListEffect(a,b));
     new TextTemplate('Eff', '%Eff, %Eff', (a:Effect, b:Effect)=>new ListEffect(a,b));

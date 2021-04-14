@@ -1,4 +1,4 @@
-import setupList from './Effects/ListEffect';
+import {setupListEffects} from './Effects/ListEffect';
 import setupDraw from './Effects/RandomTransferEffect';
 import setupDamage from './Effects/ChangePlayerValue';
 import setupConditional from './Effects/ConditionalEffect'
@@ -59,7 +59,7 @@ export default function () {
     new TextTemplate('Player','their',()=>resolvePlayerContextually)
     new TextTemplate('Player','that player',()=>resolvePlayerContextually)
     new TextTemplate('Player','',()=>resolvePlayerContextually)
-    setupList();
+    setupListEffects();
     setupDraw();
     setupDamage();
     setupConditional();
