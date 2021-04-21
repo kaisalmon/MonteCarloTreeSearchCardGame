@@ -1,5 +1,5 @@
 import CardGame, {CardGameChoiceMove, CardGameMove, CardGameState} from "../CardGame";
-import {Card, PlayerKey} from "../Card";
+import {Card, Icon, PlayerKey} from "../Card";
 import _ from 'lodash'
 import {EventParams, EventType} from "./Abilities/OnEventAbility";
 
@@ -31,14 +31,15 @@ type EventContext<E extends EventType> = {
     eventParams:EventParams<E>
 }
 
-export type Resolver<T> = {
-   resolveValue(state:CardGameState, ctx:ExecutionContext, game:CardGame):T;
+export abstract class Resolver<T>{
+   abstract resolveValue(state:CardGameState, ctx:ExecutionContext, game:CardGame):T;
 }
 
-export class ResolveConstant<T>{
+export class ResolveConstant<T> extends Resolver<T>{
   value:T;
   ctxKey?: KeysMatching<ExecutionContext, T>;
   constructor(value:T, ctxKey?: KeysMatching<ExecutionContext, T>) {
+    super();
     this.value = value;
     this.ctxKey = ctxKey;
   }
@@ -48,6 +49,10 @@ export class ResolveConstant<T>{
       }
       return this.value;
     }
+
+  static is(r: Resolver<any>) : r is ResolveConstant<unknown> {
+      return r instanceof ResolveConstant;
+  }
 }
 
 
@@ -72,6 +77,8 @@ export abstract class Effect{
         return e.returnState;
     }
   }
+
+  abstract getIcon(): Icon;
 }
 
 export default class TextTemplate<T extends Component, ARGS extends Component[]=Component[]>{

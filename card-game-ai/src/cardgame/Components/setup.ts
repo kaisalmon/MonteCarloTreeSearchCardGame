@@ -4,7 +4,7 @@ import setupDamage from './Effects/ChangePlayerValue';
 import setupConditional from './Effects/ConditionalEffect'
 import setupLessThan from './GameConditions/PlayerLessThanCondition'
 import {setup as setupEventAbilities} from './Abilities/OnEventAbility'
-import TextTemplate, {ExecutionContext, PlayerTarget} from "./TextTemplate";
+import TextTemplate, {Effect, ExecutionContext, PlayerTarget} from "./TextTemplate";
 import {PlayerKey} from "../Card";
 import numberToWords from 'number-to-words';
 import {setupChooseAPlayer} from "./ChoiceActions/ChooseAPlayer";
@@ -42,7 +42,7 @@ export const resolvePlayerContextually:PlayerTarget = {
 }
 
 
-export default function () {
+export default function setupEffects() {
         new TextTemplate('N',`a`,()=>1)
     for(let n = 0; n < 25;n++){
         new TextTemplate('N',numberToWords.toWords(n),()=>n)
@@ -59,6 +59,7 @@ export default function () {
     new TextTemplate('Player','their',()=>resolvePlayerContextually)
     new TextTemplate('Player','that player',()=>resolvePlayerContextually)
     new TextTemplate('Player','',()=>resolvePlayerContextually)
+    new TextTemplate('Eff','%Eff again',(e:Effect)=>e)
     setupListEffects();
     setupDraw();
     setupDamage();

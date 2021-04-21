@@ -1,6 +1,6 @@
 import TextTemplate, {Effect, ExecutionContext} from "../TextTemplate";
 import CardGame, {CardGameState} from "../../CardGame";
-import {PlayerKey} from "../../Card";
+import {Icon, PlayerKey} from "../../Card";
 
 export default class ListEffect extends Effect{
     a:Effect;
@@ -13,6 +13,10 @@ export default class ListEffect extends Effect{
     applyEffect(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
         const afterA = this.a.applyEffect(state, ctx, game);
         return this.b.applyEffect(afterA, ctx, game);
+    }
+
+    getIcon(): Icon {
+        return this.b.getIcon();
     }
 }
 

@@ -295,9 +295,9 @@ function main(){
     const settings:TournamentSettings<typeof game> = {
         game,
         strategies:{
-           // 'Bespoke AI': new CardGameStrategy(),
+            //'Bespoke AI': new CardGameStrategy(),
             //'True Random': new RandomStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(true),
-            // 'mcts Greedy': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1,1, heuristic),
+           //  'mcts Greedy': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(1,1, heuristic),
             //'mcts Medium': new MCTSStrategy<StateFromGame<typeof game>, MoveFromGame<typeof game>>(30,30, heuristic, new CardGameStrategy()),
             /*
             'mcts Pruned': (()=>{
@@ -343,7 +343,7 @@ function main(){
         },
         enableMirrorMatches: true,
         maxGameLength: 100,
-        gamesPerMatchUp: 1,
+        gamesPerMatchUp: 1000,
         eloConstant: 30,
         moveAnalysis: true,
         snapshotLength: 37,

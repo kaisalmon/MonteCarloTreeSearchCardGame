@@ -17,6 +17,9 @@ export class ConditionalEffect extends Effect{
         }
         return state;
     }
+    getIcon(){
+        return this.eff.getIcon();
+    }
 }
 
 export default function setup(){

@@ -1,6 +1,7 @@
 import TextTemplate, {Effect, ExecutionContext, Fizzle, PlayerTarget} from "../TextTemplate";
 import CardGame, {CardGamePlayerState, CardGameState} from "../../CardGame";
 import _ from 'lodash';
+import {Icon} from "../../Card";
 
 type KeysMatching<T, V> = {[K in keyof T]-?: T[K] extends V ? K : never}[keyof T];
 
@@ -45,6 +46,16 @@ class RandomTransferEffect extends Effect{
                 [this.from]:fromPile
             }
         }
+    }
+
+    getIcon(): Icon{
+        if(this.to === 'hand'){
+            return this.from === 'deck' ? 'card-draw' : 'card-pickup';
+        }
+        if(this.from === 'hand'){
+            return 'card-random'
+        }
+        return 'card-exchange';
     }
 }
 export class DrawCardEffect extends RandomTransferEffect{

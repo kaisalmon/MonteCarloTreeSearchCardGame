@@ -36,3 +36,17 @@
     transform: rotate(360deg);
   }
 }
+
+.zoom-focus{
+  transform: scale(0.5);
+  margin: -180px -210px 0 -200px;
+  z-index: 0;
+  transition: transform 0.3s;
+  transform-origin: bottom;
+  transform-style: flat;
+  pointer-events: none;
+}
+.zoom-focus:hover{
+  transform: none!important;
+  z-index: 1;
+}

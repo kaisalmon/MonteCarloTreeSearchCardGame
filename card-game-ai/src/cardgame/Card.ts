@@ -3,11 +3,17 @@ import {Ability, ChoiceAction, Effect, Fizzle} from "./Components/TextTemplate";
 
 export type PlayerKey = 'playerOne'|'playerTwo'
 
+export type IconModifier = 'plus'|'minus'|'hearts'|'clubs'|'spades'|'diamonds'
+export type Icon = string|{icon:string, modifier?:IconModifier}
+
 export abstract class Card{
     cardNumber: number;
     cost: number;
     abstract getName():string;
     abstract getText():string;
+
+    abstract getIcon():Icon;
+
     abstract applyEffect(state:CardGameState, playerKey:PlayerKey, game:CardGame):CardGameState;
 
     constructor(cardNumber: number, cost:number) {
@@ -72,6 +78,10 @@ export class EffectCard extends Card{
         return this.text;
     }
 
+    getIcon(): Icon {
+        return this.effect.getIcon();
+    }
+
     constructor(effect:Effect, text:string, name:string, cardNumber:number, cost=1) {
         super(cardNumber, cost);
         this.effect = effect;
@@ -118,6 +128,9 @@ export class ChoiceActionCard extends Card{
         if(!c) return false;
         return (c as Record<string, any>).hasOwnProperty('choiceAction')
     }
+    getIcon(){
+        return "overhead";
+    }
 }
 
 export class ItemCard extends Card{
@@ -156,5 +169,9 @@ export class ItemCard extends Card{
 
     static isItemCard(c:Card):c is ItemCard{
         return (c as Object).hasOwnProperty('ability')
+    }
+
+    getIcon(){
+        return "quill-ink";
     }
 }

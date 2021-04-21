@@ -9,6 +9,8 @@ import FlipMove from 'react-flip-move';
 import CardPile from "./CardPile";
 import ChoiceArrow from "./ChoiceArrow";
 import {ChoiceActionCard} from "../cardgame/Card";
+import PlayerHand from "./PlayerHand";
+import {isA} from "../../node_modules.deltemetoo/expect/build/jasmineUtils";
 
 type GameBoardProps = {
     gamestate: CardGameState;
@@ -42,11 +44,6 @@ const ACTIVE_WRAPPER_STYLE = {
     background: 'gold',
 }
 
-const HAND_STYLE = {
-    display: 'inline-flex',
-    minWidth: 400,
-    justifyContent:'center'
-}
 const HEALTH_WRAPPER_STYLE:CSSProperties = {
     fontSize: 80,
     position: "relative",
@@ -108,23 +105,17 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, setPr
                     {player.popularity}
                 </div>
             </div>
-            <FlipMove style={{...HAND_STYLE}}>
-                {displayHand.map(n=><div key={n+' '+game.cardIndex[n].getName()} style={{position: 'relative'}}>
-                    <CardWrapper
-                        gamestate={gamestate}
-                        game={game}
-                        onClick={()=>onCardClick(n)}
-                        setPreview={setPreview}
-                        isOpponent={isHidden}
-                        isHidden={isHidden && !cardsBeingPlayed.includes(n)}
-                        card={game.cardIndex[n]}
-                        canBePlayed={isActive && !isHidden && gamestate.step === 'play' && !cardsBeingPlayed.includes(n)}
-                        canBeDiscarded={isActive && !isHidden && gamestate.step === 'draw' && !cardsBeingPlayed.includes(n)}
-                        beingPlayed={cardsBeingPlayed.includes(n)}
-                        onBoard={player.board.includes(n)}
-                    />
-                </div>)}
-            </FlipMove>
+            <PlayerHand
+                game={game}
+                displayHand={displayHand}
+                gamestate={gamestate}
+                onCardClick={onCardClick}
+                setPreview={setPreview}
+                isOpponent={isHidden}
+                isActive={isActive}
+                player={player}
+                cardsBeingPlayed={cardsBeingPlayed}
+            />
             <CardPile
                 label="deck"
                 cards={player.deck.map(n=>isHidden ? '?' : game.cardIndex[n] )}

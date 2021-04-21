@@ -1,25 +1,25 @@
 [
  {
    "name": "Heartist Campaign",
-   "text": "All demographics shift towards the hearts extreme, gain two political capital",
+   "text": "Gain two political capital. All demographics shift towards the hearts extreme",
    "cost": 0,
    "type": "effect"
  },
  {
    "name": "Diamondism Campaign ",
-   "text": "All demographics shift towards the diamonds extreme, gain two political capital",
+   "text": "Gain two political capital. All demographics shift towards the diamonds extreme",
    "cost": 0,
    "type": "effect"
  },
  {
    "name": "Clubimist Campaign",
-   "text": "All demographics shift towards the clubs extreme, gain two political capital",
+   "text": "Gain two political capital. All demographics shift towards the clubs extreme",
    "cost": 0,
    "type": "effect"
  },
  {
    "name": "Pro-Spade Campaign",
-   "text": "All demographics shift towards the spades extreme, gain two political capital",
+   "text": "Gain two political capital. All demographics shift towards the spades extreme",
    "cost": 0,
    "type": "effect"
  },
@@ -55,7 +55,7 @@
  },
  {
    "name": "Pander to Base",
-   "text": "Your followers shift towards you and you gain two political capital",
+   "text": "Your followers shift towards you, then shift away from your opponent, then your followers shift towards you again",
    "cost": 0,
    "type": "effect"
  },
@@ -67,8 +67,8 @@
  },
  {
    "name": "Regress to the Mean",
-   "text": "Shift towards the center and gain one popularity",
-   "cost": 0,
+   "text": "Gain one popularity and shift towards the center",
+   "cost": 1,
    "type": "effect"
  },
  {
@@ -79,8 +79,8 @@
  },
  {
    "name": "Personality over Policy",
-   "text": "Shift towards your opponent and gain one political capital",
-   "cost": 0,
+   "text": "Gain one popularity and gain one political capital, then shift towards your opponent",
+   "cost": 1,
    "type": "effect"
  },
  {
@@ -92,7 +92,7 @@
  {
    "name": "Reduce Harmful Rhetoric",
    "text": "Undecided voters shift towards the center. You gain one popularity",
-   "cost": 1,
+   "cost": 0,
    "type": "effect"
  },
  {
@@ -121,7 +121,7 @@
  },
  {
    "name": "Dog Whistle",
-   "text": "Choose an extreme. Undecided voters in that quadrant shift towards you twice",
+   "text": "Choose an extreme. Undecided voters in that quadrant and your followers in that quadrant shift towards you twice",
    "cost": 0,
    "type": "choice"
  },
@@ -134,7 +134,37 @@
  {
    "name": "Heartist Policies",
    "text": "At the end of each round, if you are in the hearts extreme, all demographics in that quadrant shift towards you and you gain two popularity",
-   "cost": 2,
+   "cost": 4,
+   "type": "policy"
+ },
+ {
+   "name": "Clubimist Policies",
+   "text": "At the end of each round, if you are in the clubs extreme, all demographics in that quadrant shift towards you and you gain two popularity",
+   "cost": 4,
+   "type": "policy"
+ },
+ {
+   "name": "Pro-Spade Policies",
+   "text": "At the end of each round, if you are in the spades extreme, all demographics in that quadrant shift towards you and you gain two popularity",
+   "cost": 4,
+   "type": "policy"
+ },
+ {
+   "name": "Diamondism Policies",
+   "text": "At the end of each round, if you are in the diamonds extreme, all demographics in that quadrant shift towards you and you gain two popularity",
+   "cost": 4,
+   "type": "policy"
+ },
+ {
+   "name": "Strategic Policies",
+   "text": "At the end of each round, gain 2 political capital",
+   "cost": 3,
+   "type": "policy"
+ },
+ {
+   "name": "Popular Policies",
+   "text": "At the end of each round, gain 1 popularity",
+   "cost": 3,
    "type": "policy"
  }
 ]

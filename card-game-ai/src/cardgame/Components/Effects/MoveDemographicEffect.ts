@@ -3,7 +3,9 @@ import CardGame, {CardGamePlayerState, CardGameState} from "../../CardGame";
 import {MovePlayerTowardsPointEffect} from "./MovePlayerEffect";
 import {ContextualExtreme} from "../ChoiceActions/ContextualExtreme";
 import _ from 'lodash'
+import {Icon, IconModifier} from "../../Card";
 
+export type Point = {x:number, y:number};
 export const EXTREMES = {
     hearts: {x:1, y:-1},
     clubs: {x:-1, y:-1},
@@ -19,6 +21,7 @@ export abstract class MoveDemographicEffect extends Effect{
     }
 
     abstract shift(pos:{x:number, y:number},state:CardGameState, ctx:ExecutionContext, game:CardGame): {x:number, y: number};
+    abstract getIcon(): Icon;
 
     applyEffect(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
         const indexes = this.demos.resolveValue(state, ctx, game);
@@ -31,9 +34,20 @@ export abstract class MoveDemographicEffect extends Effect{
             )
         }
     }
+
+    static getIconModiferFromPoint(pointResolver: Resolver<Point>): IconModifier|undefined {
+        if(!ResolveConstant.is(pointResolver)){
+            return undefined;
+        }
+        return pointResolver.value === EXTREMES.clubs ? 'clubs' :
+            pointResolver.value === EXTREMES.hearts ? 'hearts' :
+            pointResolver.value === EXTREMES.diamonds ? 'diamonds' :
+            pointResolver.value === EXTREMES.spades ? 'spades' :
+            undefined;
+    }
 }
 export class MoveDemographicTowardsPointEffect extends MoveDemographicEffect{
-    point:Resolver<{x:number, y:number}>
+    point:Resolver<Point>;
     stepSize:number;
     constructor(demos:Resolver<number[]>, point:Resolver<{x:number, y:number}>,stepSize:number) {
         super(demos);
@@ -43,6 +57,16 @@ export class MoveDemographicTowardsPointEffect extends MoveDemographicEffect{
 
     shift(pos: { x: number; y: number }, state:CardGameState, ctx: ExecutionContext, game: CardGame): { x: number; y: number } {
         return MovePlayerTowardsPointEffect.shiftTowardsPoint(this.point, this.stepSize, pos, state, ctx, game);
+    }
+
+    getIcon(): Icon {
+        const icon = this.stepSize < 0 ? 'expand' : 'contract';
+
+        const modifier = MoveDemographicEffect.getIconModiferFromPoint(this.point);
+        return {
+            icon,
+            modifier
+        };
     }
 
 }
@@ -76,7 +100,21 @@ class resolveUndecided implements Resolver<number[]>{
             .map(({i})=>i)
     }
 }
+class ListDemographic implements Resolver<number[]>{
+    a:Resolver<number[]>;
+    b:Resolver<number[]>;
 
+    constructor(a:Resolver<number[]>, b:Resolver<number[]>) {
+        this.a = a;
+        this.b = b;
+    }
+
+    resolveValue(state: CardGameState, ctx: ExecutionContext, game:CardGame){
+        const aDemos = this.a.resolveValue(state, ctx, game);
+        const bDemos = this.b.resolveValue(state, ctx, game);
+        return _.uniq([...aDemos, ...bDemos]);
+    }
+}
 class resolveQuadrantDemographics implements Resolver<number[]>{
     point:Resolver<{x:number, y:number}>
     demos:Resolver<number[]>;
@@ -113,6 +151,7 @@ export function setupMoveDemographics(){
     new TextTemplate('Demos', '%Player followers', (playerTarget:PlayerTarget) => new resolveFollowers(playerTarget));
     new TextTemplate('Demos', 'undecided voters', () => new resolveUndecided());
     new TextTemplate('Demos', `%Demos in that quadrant`, (demos:Resolver<number[]>) => new resolveQuadrantDemographics(demos, new ContextualExtreme()));
+    new TextTemplate('Demos', '%Demos and %Demos', (a:Resolver<number[]>, b:Resolver<number[]>) => new ListDemographic(a,b));
 
 
     Object.entries(EXTREMES).forEach(([extreme, position]) => {

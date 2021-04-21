@@ -1,9 +1,10 @@
 import TextTemplate, {Effect, ExecutionContext, PlayerTarget} from "../TextTemplate";
 import CardGame, {CardGamePlayerState, CardGameState} from "../../CardGame";
-import {PlayerKey} from "../../Card";
+import {Icon, PlayerKey} from "../../Card";
 
-type KeysMatching<T, V> = {[K in keyof T]-?: T[K] extends V ? K : never}[keyof T];
-export class ChangePlayerValue extends Effect{
+type KeysMatching<T, V> = { [K in keyof T]-?: T[K] extends V ? K : never }[keyof T];
+
+export class ChangePlayerValue extends Effect {
     target:PlayerTarget
     amount:number;
     field: KeysMatching<CardGamePlayerState, number>;
@@ -27,6 +28,11 @@ export class ChangePlayerValue extends Effect{
             amount: this.amount,
             player: targetKey
         })*/
+    }
+    getIcon(): Icon {
+        const icon = this.field === 'popularity' ? 'star' : 'capital';
+        const modifier = this.amount > 0 ? 'plus' : 'minus';
+        return {icon, modifier};
     }
 }
 

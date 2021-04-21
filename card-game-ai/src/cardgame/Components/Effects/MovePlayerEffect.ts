@@ -1,6 +1,7 @@
 import TextTemplate, {Effect, ExecutionContext, PlayerTarget, ResolveConstant, Resolver} from "../TextTemplate";
 import CardGame, {CardGamePlayerState, CardGameState} from "../../CardGame";
-import {PlayerKey} from "../../Card";
+import {Icon, PlayerKey} from "../../Card";
+import {MoveDemographicEffect} from "./MoveDemographicEffect";
 
 type KeysMatching<T, V> = {[K in keyof T]-?: T[K] extends V ? K : never}[keyof T];
 export abstract class MovePlayerEffect extends Effect{
@@ -11,6 +12,7 @@ export abstract class MovePlayerEffect extends Effect{
     }
 
     abstract shift(pos:{x:number, y:number},state:CardGameState, ctx:ExecutionContext, game:CardGame): {x:number, y: number};
+    abstract getIcon(): Icon;
 
     applyEffect(state: CardGameState, ctx:ExecutionContext, game:CardGame): CardGameState {
         const playerKey = this.target.resolveValue(state, ctx, game);
@@ -47,6 +49,12 @@ export class MovePlayerTowardsPointEffect extends MovePlayerEffect{
     }
     shift(pos: { x: number; y: number }, state:CardGameState, ctx: ExecutionContext, game: CardGame): { x: number; y: number } {
         return MovePlayerTowardsPointEffect.shiftTowardsPoint(this.point, this.stepSize, pos, state, ctx, game);
+    }
+    getIcon(): Icon{
+        return {
+            icon: 'move',
+            modifier: MoveDemographicEffect.getIconModiferFromPoint(this.point)
+        }
     }
 
 }

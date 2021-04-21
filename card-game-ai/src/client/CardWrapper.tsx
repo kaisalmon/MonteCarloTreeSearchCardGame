@@ -21,13 +21,16 @@ type CardProps = {
     onBoard:boolean;
 }
 
-const BEING_PLAYED_CARD_STYLE = {
+const BEING_PLAYED_CARD_STYLE:CSSProperties = {
     color: 'blue',
     borderColor: 'black',
     transform: "scale(1.3)",
-    marginLeft: -40,
-    marginRight: -40,
-    zIndex: 1,
+    zIndex: 2,
+    cursor: 'pointer',
+    opacity: 0.5,
+    margin: '0 70px',
+    pointerEvents: 'none',
+    transition: 'margin 0.3s, opacity 0.3s ease-in 1s'
 }
 const CAN_BE_DISCADED_STYLE = {
     borderColor: 'red',
@@ -41,10 +44,10 @@ const CAN_BE_PLAYED_STYLE = {
 }
 
 const MOVE_DOWN_STYLE = {
-    top: 160,
+    top: 460,
 }
 const MOVE_UP_STYLE = {
-    top: -160,
+    top: -460,
 }
 
 
