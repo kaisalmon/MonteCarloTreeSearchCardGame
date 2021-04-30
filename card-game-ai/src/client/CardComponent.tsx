@@ -118,11 +118,11 @@ function VerticalCenter(props:React.PropsWithChildren<{}>){
 
 export type HSV = [number, number, number];
 
-function IconComponent(props:{icon:Icon, hsv:HSV}){
+export function IconComponent(props:{icon:Icon, hsv:HSV, size:string}){
     const {icon,hsv} = props;
     const iconName = typeof icon === 'string' ? icon : icon.icon;
     return <div style={{textAlign: 'center'}}>
-        <img src={icons[iconName]} width="120px" height="120px"/>
+        <img src={icons[iconName]} width={props.size} height={props.size}/>
     </div>
 }
 
@@ -153,7 +153,6 @@ const CardComponent = (props:CardComponentProps) => {
     const iconName = typeof icon === 'string' ? icon : icon.icon;
     const backgroundImage = `url(${icons[iconName]})`;
     const hsv:HSV = [180, 70, 50];
-    const filter = `brightness(60%) sepia(100%) saturate(300%) hue-rotate(-35deg)`;
     return <div style={{position:'relative', overflow:'hidden', ...props.style}} onClick={props.onClick}>
         <div style={{...rotationStyle, ...CARD_STYLE, }}>
            <div style={{...BACKGROUND_ICONS_STYLE, backgroundImage}}/>
@@ -167,7 +166,7 @@ const CardComponent = (props:CardComponentProps) => {
                     </div>
                 </TextFillSpace>
             <VerticalCenter>
-                    <IconComponent icon={icon} hsv={hsv}/>
+                    <IconComponent icon={icon} hsv={hsv} size="120px"/>
             </VerticalCenter>
             <TextFillSpace style={CARD_TEXT_STYLE}>
                 <VerticalCenter>

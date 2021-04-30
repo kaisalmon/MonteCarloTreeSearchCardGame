@@ -18,3 +18,30 @@ code {
 .glow:hover{
   box-shadow: 0 0  5px 5px white;
 }
+.move-history-wrapper{
+  position: fixed;
+  border: 1px solid black;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 60px;
+  background: white;
+}
+.move-history{
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.move-history *{
+  margin: 1px 1px 1px 4px;
+}
+
+.move-history .player-1{
+  border-left: #0b97c4 6px solid;
+}
+.move-history .player-2{
+  border-left: #cc0000 6px solid;
+}
+.move-history img{
+  filter: invert(1);
+}

@@ -10,11 +10,13 @@ import * as React from "react";
 import getExampleDeck from "../../cardgame/Data/ExampleDecks";
 import './App.css';
 import delay from "delay";
+import { MoveHistoryEntry} from "../MoveHistory";
 
 
 type CombinedGameState = {
     state: CardGameState,
-    lastMove?: CardGameChain
+    lastMove?: CardGameChain,
+    moveHistory:MoveHistoryEntry[],
 }
 
 function getMoveFromCardClick(gamestate:CardGameState, cardNumber:number):CardGameMove{
@@ -22,7 +24,7 @@ function getMoveFromCardClick(gamestate:CardGameState, cardNumber:number):CardGa
     else return {type:'play', cardNumber}
 }
 
-const WATCH_MODE = false;
+const WATCH_MODE = true;
 
 const worker = new Worker();
 
@@ -32,7 +34,8 @@ function Main() {
   const game = useMemo(()=>new CardGame(cardIndex), [cardIndex]);
 
   const [combinedGameState, setCombinedGameState] = React.useState<CombinedGameState>({
-      state: game.newGame()
+      state: game.newGame(),
+      moveHistory: [],
   });
   const status = useMemo(()=>game.getStatus(combinedGameState.state),[game, combinedGameState.state])
 
@@ -46,15 +49,17 @@ function Main() {
         const loop = async ()=>{
             if((combinedGameState.state.activePlayer === 2 || WATCH_MODE) && !isLoading && game.getStatus(combinedGameState.state) === GameStatus.IN_PLAY){
                 setIsLoading(true)
-                const delay_time = (combinedGameState.lastMove as CardGameMove)?.type === 'end' ? 1000 : 1500;
+                const delay_time = (combinedGameState.lastMove as CardGameMove)?.type === 'end' ? 1000 : 2500;
                 const [{mood, move}]:[WorkerResponse, void] = await Promise.all([worker.processData(combinedGameState.state), delay(delay_time)])
                 const newState = game.applyMoveChain(combinedGameState.state, move);
                 setMood(mood)
                 setIsLoading(false)
                 setPreviewState(undefined)
+                const lastMove = Array.isArray(move) ? move[0] : move;
                 setCombinedGameState({
                     state:newState,
-                    lastMove: Array.isArray(move) ? move[0] : move
+                    lastMove: lastMove,
+                    moveHistory: [...combinedGameState.moveHistory, {move: lastMove, player:combinedGameState.state.activePlayer}]
                 })
             }
         }
@@ -64,6 +69,17 @@ function Main() {
     const lastmove  = (Array.isArray(combinedGameState.lastMove)?combinedGameState.lastMove[0] : combinedGameState.lastMove )||{type:'end'}
     const canEndTurn = game.getValidMoves(combinedGameState.state).find(m=>!Array.isArray(m) && m.type==="end");
 
+    function applyMove(move:CardGameMove){
+        if(status !== GameStatus.IN_PLAY)return;
+        const newState = game.applyMove(combinedGameState.state, move);
+        setPreviewState(undefined)
+        setCombinedGameState({
+            state:newState,
+            lastMove: move,
+            moveHistory: [...combinedGameState.moveHistory, {move, player:combinedGameState.state.activePlayer}]
+        })
+    }
+
   return (
     <div className="App">
         {status !== GameStatus.IN_PLAY && <h1>{status}</h1>}
@@ -72,24 +88,13 @@ function Main() {
           game={game}
           lastmove={lastmove}
           previewState={previewState}
+          moveHistory={combinedGameState.moveHistory}
           onCardClick={(n)=>{
-              if(status !== GameStatus.IN_PLAY)return;
               const move = getMoveFromCardClick(combinedGameState.state,n)
-              const newState = game.applyMove(combinedGameState.state, move);
-              setPreviewState(undefined)
-            setCombinedGameState({
-                state:newState,
-                lastMove: move
-            })
+              applyMove(move)
           }}
           onChoiceClick={(move)=>{
-              if(status !== GameStatus.IN_PLAY)return;
-              const newState = game.applyMove(combinedGameState.state, move);
-              setPreviewState(undefined)
-            setCombinedGameState({
-                state:newState,
-                lastMove: move
-            })
+              applyMove(move)
           }}
           setPreview={move=>setPreviewState( move && game.applyMove(combinedGameState.state, move))}
       />
@@ -98,11 +103,7 @@ function Main() {
           disabled={status!==GameStatus.IN_PLAY || combinedGameState.state.activePlayer === 2 || !canEndTurn}
           onClick={()=>{
               const move:CardGameMove = {type:"end"}
-              const newState = game.applyMove(combinedGameState.state, move);
-            setCombinedGameState({
-                state:newState,
-                lastMove: move
-            })
+              applyMove(move)
           }}
       >
           {combinedGameState.state.endRoundAfterThisTurn ? 'End Round' : 'End Turn'}

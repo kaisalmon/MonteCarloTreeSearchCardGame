@@ -30,13 +30,13 @@ const CardPile:React.FunctionComponent<CardPileProps> = props=>{
         label,
         cards
     } = props;
-        const {
-    getArrowProps,
-    getTooltipProps,
-    setTooltipRef,
-    setTriggerRef,
-    visible
-  } = usePopperTooltip({ interactive: true, delayHide: 100 });
+    const {
+        getArrowProps,
+        getTooltipProps,
+        setTooltipRef,
+        setTriggerRef,
+        visible
+      } = usePopperTooltip({ interactive: true, delayHide: 100 });
 
     return <>
             <div style={PILE_STYLE} ref={setTriggerRef}>

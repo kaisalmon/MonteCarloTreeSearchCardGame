@@ -11,6 +11,7 @@ import ChoiceArrow from "./ChoiceArrow";
 import {ChoiceActionCard} from "../cardgame/Card";
 import PlayerHand from "./PlayerHand";
 import {isA} from "../../node_modules.deltemetoo/expect/build/jasmineUtils";
+import MoveHistory, {MoveHistoryElementProps, MoveHistoryEntry} from "./MoveHistory";
 
 type GameBoardProps = {
     gamestate: CardGameState;
@@ -19,7 +20,8 @@ type GameBoardProps = {
     previewState?: CardGameState;
     onCardClick: (n:number)=>void;
     setPreview: (move?:CardGameMove)=>void,
-    onChoiceClick: (move:CardGameChoiceMove)=>void
+    onChoiceClick: (move:CardGameChoiceMove)=>void,
+    moveHistory:MoveHistoryEntry[],
 
 }
 type PlayerDisplayProps = {
@@ -128,11 +130,12 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, setPr
 }
 
 const GameBoard:FunctionComponent<GameBoardProps> = (props)=>{
-    const {gamestate, game, lastmove, onCardClick, onChoiceClick, setPreview, previewState} = props;
+    const {gamestate, game, lastmove, onCardClick, onChoiceClick, setPreview, previewState, moveHistory} = props;
     return <>
         <div>
             Step: {gamestate.step}
         </div>
+        <MoveHistory moveHistory={moveHistory} game={game}/>
         <PlayerDisplay onCardClick={()=>{}} setPreview={()=>{}} game={game} gamestate={gamestate} player={gamestate.playerTwo} lastmove={gamestate.activePlayer === 2 ? lastmove: undefined} isActive={gamestate.activePlayer === 2} isHidden={true}/>
         <DemographicDisplay
             gamestate={gamestate}
