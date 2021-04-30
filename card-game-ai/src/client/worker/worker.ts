@@ -20,11 +20,6 @@ strategy.useCache = true;
 strategy.usePruning = true;
 strategy.pruningPeriod = 3;
 
-strategy.secondaryObjective = (state)=>{
-  const votes = game.getVotes(state);
-  return votes[1] - votes[2];
-}
-
 
 export function processData(state: CardGameState): WorkerResponse {
   const move =  strategy.pickMove(game, state);

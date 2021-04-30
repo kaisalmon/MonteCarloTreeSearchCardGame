@@ -23,6 +23,7 @@ export interface CardGamePlayerState {
     readonly discardPile: readonly number[];
     readonly deck: readonly number[];
 }
+export type CardGameReturnState = Omit<CardGameState, "cancelState">
 
 export interface CardGameState {
     readonly activePlayer: 1|2;
@@ -36,13 +37,15 @@ export interface CardGameState {
     readonly playerTwo: CardGamePlayerState;
     readonly cardBeingPlayed?:number,
     readonly log?:string[],
+    readonly cancelState?: CardGameReturnState,
 }
 
 interface CardGamePlayCardMove {type:"play"; cardNumber:number}
 interface CardGameDiscardCardMove{type:"discard"; cardNumber:number}
 interface CardGameEndMove {type:"end"}
+interface CardGameCancelMove {type:"cancel"}
 export interface CardGameChoiceMove {type:"choice", choice:number}
-export type CardGameMove = CardGameEndMove | CardGamePlayCardMove | CardGameDiscardCardMove | CardGameChoiceMove;
+export type CardGameMove = CardGameEndMove | CardGamePlayCardMove | CardGameDiscardCardMove | CardGameChoiceMove | CardGameCancelMove;
 
 export const POP_RANGE = 1/75;
 
@@ -74,6 +77,8 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
             return this.applyCardDiscard(state, move.cardNumber)
         }else if(move.type === "choice"){
             return this.applyChoiceMove(state, move)
+        }else if(move.type === "cancel"){
+            return this.applyCancelMove(state)
         }
         throw new Error("Unknown move")
     }
@@ -321,7 +326,8 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         return {
             ...stateAfterEffects,
             step: 'play',
-            cardBeingPlayed: undefined
+            cardBeingPlayed: undefined,
+            cancelState: undefined
         }
     }
 
@@ -351,5 +357,14 @@ export default class CardGame extends Game<CardGameState, CardGameMove>{
         const card = this.cardIndex[state.cardBeingPlayed];
         if(!ChoiceActionCard.is(card)) throw new Error("Not a choice card!")
         return card.choiceAction
+    }
+
+    private applyCancelMove(state: CardGameState): CardGameState {
+        const playerKey = state.activePlayer  === 1 ? 'playerOne' : 'playerTwo';
+        const card = this.cardIndex[state.cardBeingPlayed!];
+        if(!ChoiceActionCard.is(card)) {
+            throw new Error(`${state.cardBeingPlayed} Not a choice card!`)
+        }
+        return card.cancel(state);
     }
 }

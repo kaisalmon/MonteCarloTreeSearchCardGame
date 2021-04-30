@@ -22,7 +22,7 @@ export abstract class Card{
     }
 
 
-    private preEffect(state:CardGameState, playerKey:PlayerKey):CardGameState{
+    protected preEffect(state:CardGameState, playerKey:PlayerKey):CardGameState{
         const player = state[playerKey];
         const hand = [...player.hand]
         const capitalCost = Math.min(player.capital, this.cost);
@@ -112,6 +112,12 @@ export class ChoiceActionCard extends Card{
         this.text = text;
         this.name = name;
     }
+    protected preEffect(state:CardGameState, playerKey:PlayerKey):CardGameState {
+        return {
+            ...super.preEffect(state,playerKey),
+            cancelState: state
+        };
+    }
     applyEffect(state: CardGameState, playerKey:PlayerKey, game:CardGame): CardGameState {
         return {
             ...state,
@@ -130,6 +136,13 @@ export class ChoiceActionCard extends Card{
     }
     getIcon(){
         return "overhead";
+    }
+
+    cancel(state:CardGameState):CardGameState {
+        if(!state.cancelState){
+            throw new Error("No cancel state to return to")
+        }
+        return state.cancelState;
     }
 }
 

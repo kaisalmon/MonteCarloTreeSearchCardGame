@@ -24,7 +24,7 @@ function getMoveFromCardClick(gamestate:CardGameState, cardNumber:number):CardGa
     else return {type:'play', cardNumber}
 }
 
-const WATCH_MODE = true;
+const WATCH_MODE = false;
 
 const worker = new Worker();
 
@@ -73,12 +73,28 @@ function Main() {
         if(status !== GameStatus.IN_PLAY)return;
         const newState = game.applyMove(combinedGameState.state, move);
         setPreviewState(undefined)
+        const moveHistory = move.type === 'cancel' ? combinedGameState.moveHistory.slice(0, combinedGameState.moveHistory.length-1) :  [...combinedGameState.moveHistory, {move, player:combinedGameState.state.activePlayer}];
         setCombinedGameState({
             state:newState,
             lastMove: move,
-            moveHistory: [...combinedGameState.moveHistory, {move, player:combinedGameState.state.activePlayer}]
+            moveHistory
         })
     }
+
+    React.useEffect(()=>{
+        const handler = (event:Event) => {
+            if(combinedGameState.state.activePlayer !== 1 || combinedGameState.state.step !== 'choice') {
+                return;
+            }
+            event.preventDefault();
+            applyMove({type:'cancel'})
+        };
+        document.addEventListener("contextmenu", handler);
+
+        return ()=>{
+            document.removeEventListener("contextmenu", handler)
+        }
+    }, [combinedGameState])
 
   return (
     <div className="App">
