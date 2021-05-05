@@ -1,5 +1,5 @@
 {
-  "name": "card-game-ai",
+  "name": "wasm-mcts",
   "version": "0.1.0",
   "private": true,
   "homepage": "./",
@@ -27,6 +27,7 @@
     "csv-load-sync": "^2.3.1",
     "csv-parse": "^4.15.3",
     "delay": "^5.0.0",
+    "emscripten": "0.0.2-beta",
     "fishers-exact-test": "^1.0.3",
     "gl-react": "^5.0.0",
     "gl-react-dom": "^5.1.0",

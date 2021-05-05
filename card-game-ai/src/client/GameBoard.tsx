@@ -95,6 +95,7 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, setPr
     </div>
 
     return <div style={isActive ? ACTIVE_WRAPPER_STYLE : WRAPPER_STYLE}>
+            {!isHidden && board}
             <div style={HEALTH_WRAPPER_STYLE}>
                 🟆
                 <div style={HEALTH_STYLE}>
@@ -126,8 +127,9 @@ const PlayerDisplay:FunctionComponent<PlayerDisplayProps> = ({onCardClick, setPr
                 label="discard"
                 cards={player.discardPile.map(n=>game.cardIndex[n])}
             />
+            {isHidden && board}
         </div>
-}
+};
 
 const GameBoard:FunctionComponent<GameBoardProps> = (props)=>{
     const {gamestate, game, lastmove, onCardClick, onChoiceClick, setPreview, previewState, moveHistory} = props;
